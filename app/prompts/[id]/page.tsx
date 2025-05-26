@@ -1,11 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { JSX } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Badge } from "@components/ui/badge"
 import { Button } from "@components/ui/button"
 import { Loader2, ArrowLeft, Share2, Heart, Eye, Star, User, Clock, Code2, Palette, BarChart3, Database } from "lucide-react"
 import Link from "next/link"
+import { useCategories } from "@/app/hooks/useCategories"
+import { CategoryBadge } from "@/components/category/CategoryBadge"
+import { Category } from "@/app/types/category"
 
 interface ApiPrompt {
   id: string
@@ -37,20 +41,6 @@ const categoryIconMap: Record<string, JSX.Element> = {
   default: <Code2 className="h-5 w-5" />,
 }
 
-const getCategoryName = (categoryId: number) => {
-  if (categoryId === 1) return "Backend"
-  if (categoryId === 2) return "Frontend"
-  if (categoryId === 3) return "Data Science"
-  if (categoryId === 4) return "Database"
-  if (categoryId === 5) return "Design"
-  return "기타"
-}
-
-const getCategoryIcon = (categoryId: number) => {
-  const name = getCategoryName(categoryId)
-  return categoryIconMap[name] || categoryIconMap.default
-}
-
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return "-"
   return dateStr.slice(0, 10)
@@ -64,6 +54,11 @@ const PromptDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [liked, setLiked] = useState(false)
+  const { categories } = useCategories()
+
+  // 카테고리 정보 추출
+  const category: Category | undefined = categories.find((c) => c.id === prompt?.categoryId)
+  const categoryIcon = categoryIconMap[category?.displayName ?? "default"] || categoryIconMap.default
 
   useEffect(() => {
     if (!id) return
@@ -141,10 +136,12 @@ const PromptDetailPage = () => {
           <span className="text-white/70 text-sm">프롬프트 상세보기</span>
         </div>
         <div className="flex items-center gap-3 mb-2">
-          <span className="text-purple-400">{getCategoryIcon(prompt.categoryId)}</span>
-          <Badge variant="outline" className="border-white/30 text-white/70 text-xs">
-            {getCategoryName(prompt.categoryId)}
-          </Badge>
+          <span className="text-purple-400">{categoryIcon}</span>
+          {category ? (
+            <CategoryBadge category={category} className="border-white/30 text-white/70 text-xs" />
+          ) : (
+            <Badge variant="outline" className="border-white/30 text-white/70 text-xs">카테고리 없음</Badge>
+          )}
           {!prompt.public && <Eye className="h-4 w-4 text-white/50 ml-2" aria-label="비공개" />}
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">{prompt.title}</h1>

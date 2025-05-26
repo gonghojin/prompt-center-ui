@@ -9,6 +9,10 @@ import { Badge } from "@components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@components/ui/tooltip"
 import { Search, Star, Eye, Clock, User, Plus, Code2, Database, Palette, BarChart3, Heart, Share2, Loader2, AlertTriangle } from "lucide-react"
+import { useCategories } from "@/app/hooks/useCategories";
+import { CategorySelect } from "@/components/category/CategorySelect";
+import { CategoryBadge } from "@/components/category/CategoryBadge";
+import { Category } from "@/app/types/category";
 
 // 타입 정의
 interface ApiPrompt {
@@ -32,7 +36,7 @@ interface Prompt {
   id: string
   title: string
   description: string
-  category: string
+  category: Category
   author: string
   favoriteCount: number
   viewCount: number
@@ -63,6 +67,7 @@ const usePrompts = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const promptsPerPage = 9
+  const { categories, rootCategories } = useCategories()
 
   useEffect(() => {
     const fetchPrompts = async () => {
@@ -73,13 +78,18 @@ const usePrompts = () => {
         if (!res.ok) throw new Error("데이터를 불러오지 못했습니다.")
         const data: ApiPrompt[] = await res.json()
         const mapped: Prompt[] = data.map((item) => {
-          let category = "기타"
-          if (item.categoryId === 1) category = "Backend"
-          else if (item.categoryId === 2) category = "Frontend"
-          else if (item.categoryId === 3) category = "Data Science"
-          else if (item.categoryId === 4) category = "Database"
-          else if (item.categoryId === 5) category = "Design"
-          const icon = categoryIconMap[category] || categoryIconMap.default
+          const category = categories.find((c) => c.id === item.categoryId) || {
+            id: 0,
+            name: "other",
+            displayName: "기타",
+            description: "기타 카테고리",
+            parentCategoryId: null,
+            parentCategoryName: null,
+            isSystem: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+          const icon = categoryIconMap[category.displayName] || categoryIconMap.default
           const updatedAt = item.updatedAt ? item.updatedAt.slice(0, 10) : "-"
           return {
             id: item.id,
@@ -103,8 +113,8 @@ const usePrompts = () => {
         setLoading(false)
       }
     }
-    fetchPrompts()
-  }, [])
+    if (categories.length > 0) fetchPrompts()
+  }, [categories])
 
   useEffect(() => {
     const filtered = prompts.filter((prompt) => {
@@ -113,7 +123,10 @@ const usePrompts = () => {
         (prompt.title?.toLowerCase() || "").includes(q) ||
         (prompt.description?.toLowerCase() || "").includes(q) ||
         (prompt.tags || []).some((tag) => (tag?.toLowerCase() || "").includes(q))
-      const matchesCategory = selectedCategory === "all" || prompt.category === selectedCategory
+      const matchesCategory =
+        selectedCategory === "all" ||
+        prompt.category.id.toString() === selectedCategory ||
+        (prompt.category.parentCategoryId && prompt.category.parentCategoryId.toString() === selectedCategory)
       return matchesSearch && matchesCategory
     })
     if (sortBy === "recent") {
@@ -161,6 +174,8 @@ const usePrompts = () => {
     handleFavorite,
     handleShare,
     handleLoadMore,
+    categories,
+    rootCategories,
   }
 }
 
@@ -172,6 +187,8 @@ const PromptFilters = ({
   setSelectedCategory,
   sortBy,
   setSortBy,
+  categories,
+  rootCategories,
 }: {
   searchQuery: string
   setSearchQuery: (v: string) => void
@@ -179,6 +196,8 @@ const PromptFilters = ({
   setSelectedCategory: (v: string) => void
   sortBy: string
   setSortBy: (v: string) => void
+  categories: Category[]
+  rootCategories: Category[]
 }) => (
   <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
     <CardContent className="p-6">
@@ -193,19 +212,13 @@ const PromptFilters = ({
             aria-label="프롬프트 검색"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full md:w-48 bg-white/10 backdrop-blur-sm border-white/20 text-white">
-            <SelectValue placeholder="카테고리" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">모든 카테고리</SelectItem>
-            <SelectItem value="Backend">Backend</SelectItem>
-            <SelectItem value="Frontend">Frontend</SelectItem>
-            <SelectItem value="Data Science">Data Science</SelectItem>
-            <SelectItem value="Design">Design</SelectItem>
-            <SelectItem value="Database">Database</SelectItem>
-          </SelectContent>
-        </Select>
+        <CategorySelect
+          categories={categories}
+          rootCategories={rootCategories}
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+          className="w-full md:w-48 bg-white/10 backdrop-blur-sm border-white/20 text-white"
+        />
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-48 bg-white/10 backdrop-blur-sm border-white/20 text-white">
             <SelectValue placeholder="정렬" />
@@ -266,9 +279,7 @@ const PromptCard = ({
         <div className="flex items-center gap-3">
           <div className="text-purple-400">{prompt.icon}</div>
           <div>
-            <Badge variant="outline" className="border-white/30 text-white/70 text-xs mb-2">
-              {prompt.category}
-            </Badge>
+            <CategoryBadge category={prompt.category} className="border-white/30 text-white/70 text-xs mb-2" />
             <CardTitle className="text-white text-lg group-hover:text-purple-400 transition-colors">
               {prompt.title}
             </CardTitle>
@@ -362,6 +373,8 @@ export default function PromptsPage() {
     handleFavorite,
     handleShare,
     handleLoadMore,
+    categories,
+    rootCategories,
   } = usePrompts()
 
   return (
@@ -415,6 +428,8 @@ export default function PromptsPage() {
           setSelectedCategory={setSelectedCategory}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          categories={categories}
+          rootCategories={rootCategories}
         />
 
         {/* Results */}

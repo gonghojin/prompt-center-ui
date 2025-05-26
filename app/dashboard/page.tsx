@@ -6,12 +6,26 @@ import { Input } from "@components/ui/input"
 import { Badge } from "@components/ui/badge"
 import { Search, Plus, Star, TrendingUp, Users, Clock, Code2, Database, Palette, BarChart3 } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, JSX } from "react"
 import { useRouter } from "next/navigation"
+
+// DashboardPrompt 타입 정의
+type DashboardPrompt = {
+  id: number
+  title: string
+  description: string
+  category: string
+  author: string
+  likes: number
+  views: number
+  updatedAt: string
+  tags: string[]
+  icon: JSX.Element
+}
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredPrompts, setFilteredPrompts] = useState([])
+  const [filteredPrompts, setFilteredPrompts] = useState<DashboardPrompt[]>([])
   const router = useRouter()
 
   const recentPromptsData = [
@@ -65,7 +79,7 @@ export default function Dashboard() {
     },
   ]
 
-  const [recentPrompts, setRecentPrompts] = useState(recentPromptsData)
+  const [recentPrompts, setRecentPrompts] = useState<DashboardPrompt[]>(recentPromptsData)
 
   useEffect(() => {
     const results = recentPromptsData.filter(
@@ -104,7 +118,7 @@ export default function Dashboard() {
     { name: "Design", count: 98, color: "from-yellow-500 to-orange-500" },
   ]
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
   }
 

@@ -27,6 +27,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { useCategories } from "@/app/hooks/useCategories"
+import { CategorySelect } from "@/components/category/CategorySelect"
 
 export default function NewPromptPage() {
   const [title, setTitle] = useState("")
@@ -38,14 +40,7 @@ export default function NewPromptPage() {
   const [isPublic, setIsPublic] = useState(true)
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [files, setFiles] = useState<File[]>([])
-
-  const categories = [
-    { value: "backend", label: "Backend", icon: <Code2 className="h-4 w-4" /> },
-    { value: "frontend", label: "Frontend", icon: <Palette className="h-4 w-4" /> },
-    { value: "data-science", label: "Data Science", icon: <BarChart3 className="h-4 w-4" /> },
-    { value: "database", label: "Database", icon: <Database className="h-4 w-4" /> },
-    { value: "design", label: "Design", icon: <Palette className="h-4 w-4" /> },
-  ]
+  const { categories, rootCategories } = useCategories()
 
   const teams = ["Backend Team", "Frontend Team", "Data Science Team", "Design Team", "Architecture Team", "QA Team"]
 
@@ -201,21 +196,13 @@ export default function NewPromptPage() {
                   <Label htmlFor="category" className="text-white">
                     카테고리 *
                   </Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-                      <SelectValue placeholder="카테고리를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          <div className="flex items-center gap-2">
-                            {cat.icon}
-                            {cat.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CategorySelect
+                    categories={categories}
+                    rootCategories={rootCategories}
+                    value={category}
+                    onChange={setCategory}
+                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white"
+                  />
                 </div>
               </CardContent>
             </Card>
