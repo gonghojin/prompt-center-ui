@@ -1,7 +1,23 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const path = require('path')
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig = {
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@app': path.resolve(__dirname, 'app'),
+      '@components': path.resolve(__dirname, 'components'),
+    }
+    return config
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'http://localhost:8080/api/v1/:path*',
+      },
+    ]
+  },
+}
 
-export default nextConfig;
+module.exports = nextConfig

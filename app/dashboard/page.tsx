@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
+import { Input } from "@components/ui/input"
+import { Badge } from "@components/ui/badge"
 import { Search, Plus, Star, TrendingUp, Users, Clock, Code2, Database, Palette, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
