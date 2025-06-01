@@ -23,6 +23,18 @@ import {
 import Link from "next/link"
 import { useState, useEffect } from "react"
 
+type FavoritePrompt = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  author: string;
+  likes: number;
+  views: number;
+  updatedAt: string;
+  tags: string[];
+};
+
 export default function MyPromptsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("my-prompts")
@@ -65,7 +77,7 @@ export default function MyPromptsPage() {
     },
   ])
 
-  const [favoritePrompts, setFavoritePrompts] = useState([
+  const [favoritePrompts, setFavoritePrompts] = useState<FavoritePrompt[]>([
     {
       id: 4,
       title: "머신러닝 모델 평가",
@@ -160,7 +172,20 @@ export default function MyPromptsPage() {
           { action: "즐겨찾기 취소", prompt: promptToToggle.title, time: "방금" },
         ])
       } else {
-        setFavoritePrompts((prevFavorites) => [...prevFavorites, promptToToggle])
+        setFavoritePrompts((prevFavorites) => [
+          ...prevFavorites,
+          {
+            id: promptToToggle.id,
+            title: promptToToggle.title,
+            description: promptToToggle.description,
+            category: promptToToggle.category,
+            author: "나",
+            likes: promptToToggle.likes,
+            views: promptToToggle.views,
+            updatedAt: promptToToggle.updatedAt,
+            tags: promptToToggle.tags,
+          },
+        ])
         setRecentActivity((prevActivity) => [
           ...prevActivity,
           { action: "즐겨찾기", prompt: promptToToggle.title, time: "방금" },

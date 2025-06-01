@@ -1,14 +1,16 @@
 /** @type {import('next').NextConfig} */
+import type { Configuration } from 'webpack';
 const path = require('path')
 
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config: Configuration) => {
+    config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       '@app': path.resolve(__dirname, 'app'),
       '@components': path.resolve(__dirname, 'components'),
-    }
-    return config
+    };
+    return config;
   },
   async rewrites() {
     return [

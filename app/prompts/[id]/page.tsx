@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useCategories } from "@/app/hooks/useCategories"
 import { CategoryBadge } from "@/components/category/CategoryBadge"
 import { Category } from "@/app/types/category"
+import ReactMarkdown from "react-markdown"
 
 interface ApiPrompt {
   id: string
@@ -145,11 +146,34 @@ const PromptDetailPage = () => {
           {!prompt.public && <Eye className="h-4 w-4 text-white/50 ml-2" aria-label="비공개" />}
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">{prompt.title}</h1>
-        <p className="text-white/70 mb-4">{prompt.description}</p>
+        <div className="prose prose-invert max-w-none text-white/70 mb-4">
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <p className="text-white/70">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc list-inside">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal list-inside">{children}</ol>,
+              a: ({ href, children }) => (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-400 hover:text-purple-300"
+                >
+                  {children}
+                </a>
+              ),
+            }}
+          >
+            {prompt.description}
+          </ReactMarkdown>
+        </div>
         <div className="flex flex-wrap gap-1 mb-4">
-          {prompt.tags.map((tag) => (
-            <Badge key={tag.id} variant="secondary" className="text-xs bg-white/10 text-white/70">
-              {tag.name}
+          {(Array.isArray(prompt.tags) && typeof prompt.tags[0] === "string"
+            ? prompt.tags
+            : prompt.tags?.map((t: any) => t.name) || []
+          ).map((tag: string, idx: number) => (
+            <Badge key={idx} variant="secondary" className="text-xs bg-white/10 text-white/70">
+              {tag}
             </Badge>
           ))}
         </div>

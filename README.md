@@ -102,22 +102,35 @@ npm run dev
 ```
 prompt-center-ui/
 ├── app/                # Next.js 앱 라우트 및 페이지
+│   ├── api/            # API 유틸리티
+│   │   └── promptsApi.ts   # 프롬프트 API 유틸
 │   ├── dashboard/      # 대시보드 페이지
 │   ├── my-prompts/     # 내 프롬프트 관리 페이지
 │   ├── prompts/        # 프롬프트 탐색/상세/작성
 │   │   ├── [id]/       # 프롬프트 상세 페이지
-│   │   └── new/        # 프롬프트 작성 페이지
+│   │   ├── new/        # 프롬프트 작성 페이지
+│   │   └── page.tsx    # 프롬프트 탐색 메인 페이지
 │   ├── hooks/          # 커스텀 훅
+│   │   ├── useCategories.ts
+│   │   └── usePrompts.ts   # 프롬프트 데이터 훅
 │   ├── types/          # 타입 정의
+│   │   ├── category.ts
+│   │   └── prompt.ts       # 프롬프트 타입 
 │   ├── page.tsx        # 메인 랜딩 페이지
 │   ├── layout.tsx      # 공통 레이아웃
 │   ├── loading.tsx     # 글로벌 로딩
 │   └── globals.css     # 글로벌 스타일
 ├── components/         # 공통 UI 및 도메인 컴포넌트
 │   ├── category/       # 카테고리 관련 컴포넌트
+│   ├── prompts/        # 프롬프트 관련 컴포넌트 
+│   │   ├── PromptCard.tsx
+│   │   ├── PromptFilters.tsx
+│   │   └── PromptTags.tsx
 │   └── ui/             # Button, Card, Tabs 등 UI 컴포넌트
 ├── lib/                # 유틸리티 함수
-│   └── utils.ts
+│   ├── utils.ts
+│   ├── categoryIconMap.ts   # 카테고리-아이콘 매핑 
+│   └── getSortType.ts       # 정렬 타입 매핑 함수 
 ├── public/             # 정적 파일 (이미지, SVG 등)
 ├── package.json        # 프로젝트 메타/의존성
 ├── tsconfig.json       # TypeScript 설정
