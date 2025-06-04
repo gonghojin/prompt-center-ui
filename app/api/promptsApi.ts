@@ -1,4 +1,5 @@
 import type { ApiPrompt } from "@/app/types/prompt";
+import { fetchWithAuth } from "@/app/api/fetchWithAuth";
 
 export type PromptCreatePayload = {
   title: string;
@@ -16,19 +17,19 @@ export type PromptCreatePayload = {
 
 export const getPromptsList = async (params: Record<string, string>) => {
   const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/v1/prompts/advanced-search?${queryString}`);
+  const res = await fetchWithAuth(`/api/v1/prompts/advanced-search?${queryString}`);
   if (!res.ok) throw new Error("데이터를 불러오지 못했습니다.");
   return res.json();
 };
 
 export const getPromptDetail = async (id: string) => {
-  const res = await fetch(`/api/v1/prompts/${id}`);
+  const res = await fetchWithAuth(`/api/v1/prompts/${id}`);
   if (!res.ok) throw new Error("프롬프트 상세 조회 실패");
   return res.json();
 };
 
 export const createPrompt = async (data: PromptCreatePayload) => {
-  const res = await fetch("/api/v1/prompts/", {
+  const res = await fetchWithAuth("/api/v1/prompts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

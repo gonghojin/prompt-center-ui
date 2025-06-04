@@ -11,6 +11,7 @@ import { useCategories } from "@/app/hooks/useCategories"
 import { CategoryBadge } from "@/components/category/CategoryBadge"
 import { Category } from "@/app/types/category"
 import ReactMarkdown from "react-markdown"
+import { fetchWithAuth } from "@/app/api/fetchWithAuth"
 
 interface ApiPrompt {
   id: string
@@ -65,7 +66,7 @@ const PromptDetailPage = () => {
     if (!id) return
     setLoading(true)
     setError(null)
-    fetch(`/api/v1/prompts/${id}`)
+    fetchWithAuth(`/api/v1/prompts/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("데이터를 불러오지 못했습니다.")
         return res.json()

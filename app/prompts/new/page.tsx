@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { useCategories } from "@/app/hooks/useCategories"
 import { CategorySelect } from "@/components/category/CategorySelect"
+import { fetchWithAuth } from "@/app/api/fetchWithAuth"
 
 const PromptVisibility = {
   PUBLIC: "PUBLIC",
@@ -539,7 +540,7 @@ export default function NewPromptPage() {
       status: PromptStatus.DRAFT,
     };
     try {
-      const response = await fetch("/api/v1/prompts/", {
+      const response = await fetchWithAuth("/api/v1/prompts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(promptData),
@@ -561,37 +562,35 @@ export default function NewPromptPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/20 bg-white/5 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/prompts" className="text-white/70 hover:text-white transition-colors">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <Link href="/" className="text-2xl font-bold text-white">
-                <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  PromptHub
-                </span>
-              </Link>
-              <span className="text-white/70">/ 새 프롬프트 작성</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                <Eye className="h-4 w-4 mr-2" />
-                미리보기
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                저장
-              </Button>
-            </div>
+      {/* 페이지 액션 헤더 (공통 헤더 아래) */}
+      <div className="border-b border-white/20 bg-white/5 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/prompts" className="text-white/70 hover:text-white transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <Link href="/" className="text-2xl font-bold text-white">
+              <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                PromptHub
+              </span>
+            </Link>
+            <span className="text-white/70">/ 새 프롬프트 작성</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+              <Eye className="h-4 w-4 mr-2" />
+              미리보기
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              저장
+            </Button>
           </div>
         </div>
-      </header>
+      </div>
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Form */}

@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredPrompts, setFilteredPrompts] = useState<DashboardPrompt[]>([])
   const router = useRouter()
+  const [userName, setUserName] = useState("");
 
   const recentPromptsData = [
     {
@@ -92,6 +93,20 @@ export default function Dashboard() {
     setRecentPrompts(results)
   }, [searchTerm])
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || "");
+        } catch {
+          setUserName("");
+        }
+      }
+    }
+  }, []);
+
   const stats = [
     { label: "총 프롬프트", value: "1,247", change: "+12%", icon: <Code2 className="h-5 w-5" />, href: "/prompts" },
     { label: "팀 멤버", value: "24", change: "+3", icon: <Users className="h-5 w-5" />, href: "/team" },
@@ -124,55 +139,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/20 bg-white/5 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-2xl font-bold text-white">
-                <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                  PromptHub
-                </span>
-              </Link>
-              <nav className="hidden md:flex items-center gap-6">
-                <Link href="/dashboard" className="text-white hover:text-purple-400 transition-colors">
-                  대시보드
-                </Link>
-                <Link href="/prompts" className="text-white/70 hover:text-white transition-colors">
-                  프롬프트
-                </Link>
-                <Link href="/my-prompts" className="text-white/70 hover:text-white transition-colors">
-                  내 프롬프트
-                </Link>
-                <Link href="/settings" className="text-white/70 hover:text-white transition-colors">
-                  설정
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
-                <Input
-                  placeholder="프롬프트 검색..."
-                  className="pl-10 w-64 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-              </div>
-              <Link href="/prompts/new">
-                <Button className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
-                  <Plus className="h-4 w-4 mr-2" />새 프롬프트
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      {/* Header 삭제됨 - 공통 Header만 사용 */}
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">안녕하세요, 김개발님! 👋</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">안녕하세요, {userName ? `${userName}님` : "사용자"}! 👋</h1>
           <p className="text-white/70">오늘도 효율적인 프롬프트 관리로 생산성을 높여보세요</p>
         </div>
 

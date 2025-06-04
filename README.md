@@ -104,6 +104,9 @@ prompt-center-ui/
 ├── app/                # Next.js 앱 라우트 및 페이지
 │   ├── api/            # API 유틸리티
 │   │   └── promptsApi.ts   # 프롬프트 API 유틸
+│   ├── auth/           # 인증(회원가입/로그인) 관련
+│   │   ├── login/          # 로그인 페이지
+│   │   └── register/       # 회원가입 페이지
 │   ├── dashboard/      # 대시보드 페이지
 │   ├── my-prompts/     # 내 프롬프트 관리 페이지
 │   ├── prompts/        # 프롬프트 탐색/상세/작성
@@ -121,11 +124,15 @@ prompt-center-ui/
 │   ├── loading.tsx     # 글로벌 로딩
 │   └── globals.css     # 글로벌 스타일
 ├── components/         # 공통 UI 및 도메인 컴포넌트
+│   ├── auth/       # 로그인/회원가입 관련 컴포넌트
+│   │   └── AuthForm.tsx    # 로그인/회원가입 폼 컴포넌트
 │   ├── category/       # 카테고리 관련 컴포넌트
 │   ├── prompts/        # 프롬프트 관련 컴포넌트 
 │   │   ├── PromptCard.tsx
 │   │   ├── PromptFilters.tsx
 │   │   └── PromptTags.tsx
+│   ├── layout/         # 레이아웃/글로벌 컴포넌트
+│   │   └── Header.tsx  # 사이트 공통 헤더
 │   └── ui/             # Button, Card, Tabs 등 UI 컴포넌트
 ├── lib/                # 유틸리티 함수
 │   ├── utils.ts
@@ -141,10 +148,6 @@ prompt-center-ui/
 ```bash
 npm test
 ```
-
-## 📚 문서
-- [아키텍처 문서](req/architecture.md)
-- [데이터 모델](req/model.md)
 
 ## 🤝 기여하기
 1. Fork the Project
