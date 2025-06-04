@@ -21,14 +21,28 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function Component() {
   const [isVisible, setIsVisible] = useState(false)
   const [searchValue, setSearchValue] = useState("")
+  const router = useRouter();
 
   useEffect(() => {
     setIsVisible(true)
   }, [])
+
+  const handleStart = () => {
+    // 임시: localStorage의 'user' 키로 로그인 여부 판단
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = !!localStorage.getItem('user');
+      if (isLoggedIn) {
+        router.push('/dashboard');
+      } else {
+        router.push('/auth/login');
+      }
+    }
+  }
 
   const features = [
     {
@@ -142,15 +156,14 @@ export default function Component() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  시작하기
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                onClick={handleStart}
+              >
+                시작하기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
               <Link href="/prompts">
                 <Button
                   variant="outline"
@@ -294,15 +307,14 @@ export default function Component() {
                 프롬프트 템플릿 중앙화로 팀의 생산성을 한 단계 끌어올려보세요
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/dashboard">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                  >
-                    무료로 시작하기
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  onClick={handleStart}
+                >
+                  무료로 시작하기
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
                 <Link href="/contact">
                   <Button
                     variant="outline"

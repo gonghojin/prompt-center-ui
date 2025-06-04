@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Category } from "../types/category";
+import { fetchRootCategories, fetchAllCategories } from "@/app/api/categoriesApi";
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -11,14 +12,10 @@ export const useCategories = () => {
     setLoading(true);
     setError(null);
     try {
-      const rootsResponse = await fetch("/api/v1/categories/roots");
-      if (!rootsResponse.ok) throw new Error("루트 카테고리를 불러오지 못했습니다.");
-      const rootsData = await rootsResponse.json();
+      const rootsData = await fetchRootCategories();
       setRootCategories(rootsData);
 
-      const allResponse = await fetch("/api/v1/categories");
-      if (!allResponse.ok) throw new Error("카테고리를 불러오지 못했습니다.");
-      const allData = await allResponse.json();
+      const allData = await fetchAllCategories();
       setCategories(allData);
     } catch (e: any) {
       setError(e.message);
