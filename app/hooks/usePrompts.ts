@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { useCategories } from "@/app/hooks/useCategories";
-import { getSortType } from "@/lib/getSortType";
-import { categoryIconMap } from "@/lib/categoryIconMap";
-import type { Prompt, ApiPrompt } from "@/app/types/prompt";
-import { getPromptsList } from "@/app/api/promptsApi";
+import {useEffect, useState} from "react";
+import {useCategories} from "@/app/hooks/useCategories";
+import {getSortType} from "@/lib/getSortType";
+import {categoryIconMap} from "@/lib/categoryIconMap";
+import type {ApiPrompt, Prompt} from "@/app/types/prompt";
+import {getPromptsList} from "@/app/api/promptsApi";
 
 export const usePrompts = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +43,7 @@ export const usePrompts = () => {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
-          const icon = categoryIconMap[category.displayName] || categoryIconMap.default;
+          const icon = categoryIconMap[category.name] || categoryIconMap.default;
           const updatedAt = item.updatedAt ? item.updatedAt.slice(0, 10) : "-";
           return {
             id: item.id,
