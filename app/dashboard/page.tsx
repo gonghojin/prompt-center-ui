@@ -8,6 +8,7 @@ import { Search, Plus, Star, TrendingUp, Users, Clock, Code2, Database, Palette,
 import Link from "next/link"
 import { useState, useEffect, JSX } from "react"
 import { useRouter } from "next/navigation"
+import { usePromptStatistics } from "@/app/hooks/usePromptStatistics"
 
 // DashboardPrompt 타입 정의
 type DashboardPrompt = {
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [filteredPrompts, setFilteredPrompts] = useState<DashboardPrompt[]>([])
   const router = useRouter()
   const [userName, setUserName] = useState("");
+  const { data: promptStats, loading: statsLoading, error: statsError } = usePromptStatistics();
 
   const recentPromptsData = [
     {
@@ -108,7 +110,16 @@ export default function Dashboard() {
   }, []);
 
   const stats = [
-    { label: "총 프롬프트", value: "1,247", change: "+12%", icon: <Code2 className="h-5 w-5" />, href: "/prompts" },
+    {
+      label: "총 프롬프트",
+      value: statsLoading ? "..." : promptStats ? promptStats.totalCount.toLocaleString() : "-",
+      change: statsLoading
+        ? "..."
+        : promptStats
+        ? `${promptStats.percentageChange > 0 ? "+" : ""}${promptStats.percentageChange}%`
+        : "-",
+      icon: <Code2 className="h-5 w-5" />, href: "/prompts"
+    },
     { label: "팀 멤버", value: "24", change: "+3", icon: <Users className="h-5 w-5" />, href: "/team" },
     {
       label: "이번 주 조회수",
@@ -148,6 +159,9 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
+        {statsError && (
+          <div className="mb-4 text-red-400">{statsError}</div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <Link key={index} href={stat.href}>
