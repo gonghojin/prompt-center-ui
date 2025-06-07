@@ -1,27 +1,68 @@
 "use client"
 
-import { Button } from "@components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { Input } from "@components/ui/input"
-import { Badge } from "@components/ui/badge"
-import { Search, Plus, Star, TrendingUp, Users, Clock, Code2, Database, Palette, BarChart3 } from "lucide-react"
-import Link from "next/link"
-import { useState, useEffect, JSX } from "react"
-import { useRouter } from "next/navigation"
-import { usePromptStatistics } from "@/app/hooks/usePromptStatistics"
+import {Code2, Star, TrendingUp, Users} from "lucide-react"
+import {JSX, useEffect, useState} from "react"
+import {useRouter} from "next/navigation"
+import {usePromptStatistics} from "@/app/hooks/usePromptStatistics"
+import {useRecentPrompts} from "@/app/hooks/useRecentPrompts"
+import {useCategories} from "@/app/hooks/useCategories"
+import {categoryIconMap} from "@/lib/categoryIconMap"
+import {getRelativeTime} from "@/app/lib/getRelativeTime"
+import {useRootCategoryStatistics} from "@/app/hooks/useRootCategoryStatistics"
+import {DashboardStats} from "@components/dashboard/DashboardStats"
+import {DashboardRecentPrompts} from "@components/dashboard/DashboardRecentPrompts"
+import {DashboardCategoryStats} from "@components/dashboard/DashboardCategoryStats"
+import {DashboardQuickActions} from "@components/dashboard/DashboardQuickActions"
 
 // DashboardPrompt 타입 정의
 type DashboardPrompt = {
-  id: number
+  id: string
   title: string
   description: string
   category: string
   author: string
-  likes: number
-  views: number
+  favoriteCount: number
+  viewCount: number
   updatedAt: string
   tags: string[]
   icon: JSX.Element
+  createdByName: string
+}
+
+// DashboardPrompt 타입 정의
+// (분리 컴포넌트에서 사용하는 타입)
+type DashboardPromptForComponent = {
+  id: string
+  title: string
+  description: string
+  category: string
+  author: string
+  favoriteCount: number
+  viewCount: number
+  updatedAt: string
+  tags: string[]
+  icon: JSX.Element
+  createdByName: string
+  categoryId: number
+}
+
+// API에서 받은 DashboardPrompt를 컴포넌트용으로 변환
+const mapToDashboardPrompt = (prompt: any, categories: any[], categoryIconMap: Record<string, JSX.Element>): DashboardPromptForComponent => {
+  const categoryObj = categories.find((cat) => cat.id === prompt.categoryId)
+  return {
+    id: prompt.id,
+    title: prompt.title,
+    description: prompt.description,
+    category: categoryObj ? categoryObj.displayName : prompt.categoryName || "기타",
+    author: prompt.createdByName || "-",
+    favoriteCount: prompt.favoriteCount,
+    viewCount: prompt.viewCount,
+    updatedAt: prompt.updatedAt,
+    tags: prompt.tags || [],
+    icon: categoryIconMap[prompt.categoryId] || categoryIconMap.default,
+    createdByName: prompt.createdByName || "-",
+    categoryId: prompt.categoryId,
+  }
 }
 
 export default function Dashboard() {
@@ -31,58 +72,15 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("");
   const { data: promptStats, loading: statsLoading, error: statsError } = usePromptStatistics();
 
-  const recentPromptsData = [
-    {
-      id: 1,
-      title: "API 설계 프롬프트",
-      description: "RESTful API 설계를 위한 상세 가이드라인",
-      category: "Backend",
-      author: "김개발",
-      likes: 24,
-      views: 156,
-      updatedAt: "2시간 전",
-      tags: ["API", "REST", "설계"],
-      icon: <Code2 className="h-5 w-5" />,
-    },
-    {
-      id: 2,
-      title: "React 컴포넌트 테스트",
-      description: "React 컴포넌트 단위 테스트 작성 가이드",
-      category: "Frontend",
-      author: "이프론트",
-      likes: 18,
-      views: 89,
-      updatedAt: "4시간 전",
-      tags: ["React", "Testing", "Jest"],
-      icon: <Palette className="h-5 w-5" />,
-    },
-    {
-      id: 3,
-      title: "데이터 분석 리포트",
-      description: "비즈니스 데이터 분석 및 인사이트 도출",
-      category: "Data Science",
-      author: "박데이터",
-      likes: 31,
-      views: 203,
-      updatedAt: "1일 전",
-      tags: ["분석", "리포트", "인사이트"],
-      icon: <BarChart3 className="h-5 w-5" />,
-    },
-    {
-      id: 4,
-      title: "데이터베이스 최적화",
-      description: "쿼리 성능 최적화 및 인덱스 설계",
-      category: "Database",
-      author: "최디비",
-      likes: 27,
-      views: 134,
-      updatedAt: "2일 전",
-      tags: ["SQL", "최적화", "성능"],
-      icon: <Database className="h-5 w-5" />,
-    },
-  ]
+  const [recentPromptsData, setRecentPromptsData] = useState<DashboardPrompt[]>([])
 
-  const [recentPrompts, setRecentPrompts] = useState<DashboardPrompt[]>(recentPromptsData)
+  const {categories} = useCategories();
+
+  const {
+    data: rootCategoryStats,
+    loading: rootStatsLoading,
+    error: rootStatsError
+  } = useRootCategoryStatistics();
 
   useEffect(() => {
     const results = recentPromptsData.filter(
@@ -92,7 +90,6 @@ export default function Dashboard() {
         prompt.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
     )
     setFilteredPrompts(results)
-    setRecentPrompts(results)
   }, [searchTerm])
 
   useEffect(() => {
@@ -137,16 +134,16 @@ export default function Dashboard() {
     },
   ]
 
-  const categories = [
-    { name: "Backend", count: 342, color: "from-blue-500 to-cyan-500" },
-    { name: "Frontend", count: 289, color: "from-purple-500 to-pink-500" },
-    { name: "Data Science", count: 156, color: "from-green-500 to-emerald-500" },
-    { name: "Design", count: 98, color: "from-yellow-500 to-orange-500" },
-  ]
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
   }
+
+  const {data: recentPrompts, loading: recentLoading, error: recentError} = useRecentPrompts(4);
+
+  // recentPrompts 변환
+  const recentPromptsForComponent = (recentPrompts ?? []).map((prompt) =>
+      mapToDashboardPrompt(prompt, categories, categoryIconMap)
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -159,139 +156,33 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        {statsError && (
-          <div className="mb-4 text-red-400">{statsError}</div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Link key={index} href={stat.href}>
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white/70 text-sm">{stat.label}</p>
-                      <p className="text-2xl font-bold text-white">{stat.value}</p>
-                      <p className="text-green-400 text-sm">{stat.change}</p>
-                    </div>
-                    <div className="text-purple-400">{stat.icon}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <DashboardStats stats={stats} error={statsError} loading={statsLoading}/>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Recent Prompts */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">최근 프롬프트</CardTitle>
-                  <Link href="/prompts">
-                    <Button variant="ghost" size="sm" className="text-white/70 hover:text-white">
-                      전체 보기
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentPrompts.map((prompt) => (
-                  <Link key={prompt.id} href={`/prompts/${prompt.id}`}>
-                    <div className="p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 cursor-pointer group">
-                      <div className="flex items-start gap-3">
-                        <div className="text-purple-400 mt-1">{prompt.icon}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors">
-                              {prompt.title}
-                            </h3>
-                            <Badge variant="outline" className="border-white/30 text-white/70 text-xs">
-                              {prompt.category}
-                            </Badge>
-                          </div>
-                          <p className="text-white/70 text-sm mb-3">{prompt.description}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-xs text-white/60">
-                              <span>by {prompt.author}</span>
-                              <span className="flex items-center gap-1">
-                                <Star className="h-3 w-3" />
-                                {prompt.likes}
-                              </span>
-                              <span>{prompt.views} 조회</span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {prompt.updatedAt}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 mt-2">
-                            {prompt.tags.map((tag, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs bg-white/10 text-white/70">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
+            <DashboardRecentPrompts
+                recentPrompts={recentPromptsForComponent}
+                loading={recentLoading}
+                error={recentError ?? undefined}
+                categories={categories}
+                categoryIconMap={categoryIconMap}
+                getRelativeTime={getRelativeTime}
+            />
           </div>
 
           {/* Categories & Quick Actions */}
           <div className="space-y-6">
             {/* Categories */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">카테고리별 현황</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {categories.map((category, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${category.color}`} />
-                      <span className="text-white">{category.name}</span>
-                    </div>
-                    <span className="text-white/70">{category.count}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
+            <DashboardCategoryStats
+                rootCategoryStats={rootCategoryStats ?? {categories: []}}
+                loading={rootStatsLoading}
+                error={rootStatsError ?? undefined}
+                categories={categories}
+                categoryIconMap={categoryIconMap}
+            />
             {/* Quick Actions */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">빠른 작업</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href="/prompts/new">
-                  <Button className="w-full justify-start bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
-                    <Plus className="h-4 w-4 mr-2" />새 프롬프트 작성
-                  </Button>
-                </Link>
-                <Link href="/prompts?filter=favorites">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-white/30 text-white hover:bg-white/10"
-                  >
-                    <Star className="h-4 w-4 mr-2" />
-                    즐겨찾기 보기
-                  </Button>
-                </Link>
-                <Link href="/prompts?filter=recent">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-white/30 text-white hover:bg-white/10"
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    최근 수정된 항목
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <DashboardQuickActions/>
           </div>
         </div>
       </div>
