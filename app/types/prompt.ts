@@ -1,5 +1,5 @@
-import type { Category } from "./category";
-import type { JSX } from "react";
+import type {Category} from "./category";
+import type {JSX} from "react";
 
 export interface ApiPrompt {
   id: string;
@@ -29,7 +29,9 @@ export interface Prompt {
   viewCount: number;
   updatedAt: string;
   tags: string[];
-  icon: JSX.Element;
-  isFavorite: boolean;
+  icon?: JSX.Element;
+  isFavorite?: boolean;
   isPublic: boolean;
+  status?: string;
+  visibility?: string;
 } 
