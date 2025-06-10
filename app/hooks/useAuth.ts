@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { login, register } from "@/app/api/authApi";
+import {useState} from "react";
+import {login, register} from "@/app/api/authApi";
 
 interface UseAuthReturn {
   loading: boolean;
@@ -16,7 +16,9 @@ export const useAuth = (): UseAuthReturn => {
     try {
       const payload = token.split('.')[1];
       const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-      return JSON.parse(decoded);
+      // 한글 등 유니코드 복원
+      const unicodeDecoded = decodeURIComponent(escape(decoded));
+      return JSON.parse(unicodeDecoded);
     } catch {
       return {};
     }

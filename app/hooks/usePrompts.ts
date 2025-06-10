@@ -4,6 +4,7 @@ import {getSortType} from "@/lib/getSortType";
 import {categoryIconMap} from "@/lib/categoryIconMap";
 import type {ApiPrompt, Prompt} from "@/app/types/prompt";
 import {getPromptsList} from "@/app/api/promptsApi";
+import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt";
 
 export const usePrompts = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,7 +29,7 @@ export const usePrompts = () => {
           sortType: getSortType(sortBy),
           status: "PUBLISHED",
         };
-        if (searchQuery) params.title = searchQuery;
+        if (searchQuery) params.searchKeyword = searchQuery;
         if (selectedCategory !== "all") params.categoryId = selectedCategory;
         const data = await getPromptsList(params);
         const mapped: Prompt[] = (data.content || []).map((item: ApiPrompt) => {
@@ -56,7 +57,7 @@ export const usePrompts = () => {
             updatedAt,
             tags: Array.isArray(item.tags) && typeof item.tags[0] === "string" ? item.tags : (item.tags?.map((t) => t.name) || []),
             icon,
-            isFavorite: false,
+            favorite: item.favorite,
             isPublic: item.public,
           };
         });
@@ -74,8 +75,27 @@ export const usePrompts = () => {
   const handleLike = (id: string) => {
     setPrompts((prev) => prev.map((p) => p.id === id ? { ...p, favoriteCount: p.favoriteCount + 1 } : p));
   };
-  const handleFavorite = (id: string) => {
-    setPrompts((prev) => prev.map((p) => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p));
+  const handleFavorite = async (id: string) => {
+    const prompt = prompts.find((p) => p.id === id);
+    if (!prompt) return;
+    const prevFavorite = prompt.favorite;
+    // Optimistic UI: 먼저 토글
+    setPrompts((prev) =>
+        prev.map((p) => p.id === id ? {...p, favorite: !p.favorite} : p)
+    );
+    try {
+      if (prevFavorite) {
+        await removeFavoritePrompt(id);
+      } else {
+        await addFavoritePrompt(id);
+      }
+    } catch (e: any) {
+      // 실패 시 롤백
+      setPrompts((prev) =>
+          prev.map((p) => p.id === id ? {...p, favorite: prevFavorite} : p)
+      );
+      alert(e.message || "즐겨찾기 처리 중 오류가 발생했습니다.");
+    }
   };
   const handleShare = (id: string) => {
     const promptUrl = `${window.location.origin}/prompts/${id}`;

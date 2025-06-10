@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
-import type { Configuration } from 'webpack';
+import type {Configuration} from 'webpack';
+
 const path = require('path')
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-const allowedOrigin = isDevelopment ? 'http://localhost:3000' : 'https://your-domain.com';
+const allowedOrigin = isDevelopment ? 'http://localhost:3000' : 'https://192.168.24:3000';
 
 const nextConfig = {
   webpack: (config: Configuration) => {
