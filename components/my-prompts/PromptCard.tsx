@@ -3,11 +3,12 @@ import {Card, CardContent} from "@components/ui/card";
 import {Button} from "@components/ui/button";
 import {Badge} from "@components/ui/badge";
 import Link from "next/link";
-import {Clock, Copy, Edit, Eye, Heart, Share2, Star, Trash2} from "lucide-react";
+import {Clock, Copy, Edit, Eye, Heart, Share2, Trash2} from "lucide-react";
 import {CategoryBadge} from "@components/category/CategoryBadge";
 import {getRelativeTime} from "@/app/lib/getRelativeTime";
 import type {Prompt} from "@/app/types/prompt";
 import {categoryIconMap} from "@/lib/categoryIconMap";
+import {FavoriteButton} from "@components/prompts/FavoriteButton";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -17,9 +18,9 @@ interface PromptCardProps {
   visibilityColor: Record<string, string>;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onFavorite: (id: string) => void;
   onShare: (id: string) => void;
   onCopy: (id: string) => void;
+  onFavoriteSuccess?: (id: string, isFavorite: boolean) => void;
 }
 
 export const PromptCard: FC<PromptCardProps> = ({
@@ -30,9 +31,9 @@ export const PromptCard: FC<PromptCardProps> = ({
                                                   visibilityColor,
                                                   onEdit,
                                                   onDelete,
-                                                  onFavorite,
                                                   onShare,
                                                   onCopy,
+                                                  onFavoriteSuccess,
                                                 }) => {
   const icon = prompt.icon || categoryIconMap[prompt.category.name] || categoryIconMap.default;
   return (
@@ -82,16 +83,11 @@ export const PromptCard: FC<PromptCardProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2 ml-4">
-              <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white/70 hover:text-yellow-300 p-1"
-                  onClick={() => onFavorite(prompt.id)}
-                  aria-label="즐겨찾기"
-                  tabIndex={0}
-              >
-                <Star className="h-4 w-4"/>
-              </Button>
+              <FavoriteButton
+                  promptId={prompt.id}
+                  initialFavorite={!!prompt.favorite}
+                  onSuccess={(isFavorite) => onFavoriteSuccess && onFavoriteSuccess(prompt.id, isFavorite)}
+              />
               <Button
                   size="sm"
                   variant="ghost"

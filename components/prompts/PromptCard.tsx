@@ -1,21 +1,21 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@components/ui/card";
-import { Button } from "@components/ui/button";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@components/ui/card";
+import {Button} from "@components/ui/button";
 import Link from "next/link";
-import { Star, Eye, User, Clock, Heart, Share2 } from "lucide-react";
-import { CategoryBadge } from "@components/category/CategoryBadge";
+import {Clock, Eye, Heart, Share2, User} from "lucide-react";
+import {CategoryBadge} from "@components/category/CategoryBadge";
 import ReactMarkdown from "react-markdown";
-import { Prompt } from "@/app/types/prompt";
-import { PromptTags } from "./PromptTags";
-import type { FC } from "react";
+import {Prompt} from "@/app/types/prompt";
+import {PromptTags} from "./PromptTags";
+import type {FC} from "react";
+import {FavoriteButton} from "./FavoriteButton";
 
 interface PromptCardProps {
   prompt: Prompt;
   onLike: (id: string) => void;
   onShare: (id: string) => void;
-  onFavorite: (id: string) => void;
 }
 
-export const PromptCard: FC<PromptCardProps> = ({ prompt, onLike, onShare, onFavorite }) => (
+export const PromptCard: FC<PromptCardProps> = ({prompt, onLike, onShare}) => (
   <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 group">
     <CardHeader>
       <div className="flex items-start justify-between">
@@ -27,10 +27,6 @@ export const PromptCard: FC<PromptCardProps> = ({ prompt, onLike, onShare, onFav
               {prompt.title}
             </CardTitle>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {prompt.isFavorite && <Star className="h-4 w-4 text-yellow-400 fill-current" />}
-          {!prompt.isPublic && <Eye className="h-4 w-4 text-white/50" />}
         </div>
       </div>
       <CardDescription className="prose prose-invert prose-sm max-w-none text-white/70">
@@ -94,15 +90,10 @@ export const PromptCard: FC<PromptCardProps> = ({ prompt, onLike, onShare, onFav
           >
             <Share2 className="h-4 w-4" />
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white/70 hover:text-white p-1"
-            onClick={() => onFavorite(prompt.id)}
-            aria-label="즐겨찾기"
-          >
-            <Star className="h-4 w-4" />
-          </Button>
+          <FavoriteButton
+              promptId={prompt.id}
+              initialFavorite={!!prompt.favorite}
+          />
           <Link href={`/prompts/${prompt.id}`} tabIndex={0} aria-label="프롬프트 상세 보기">
             <Button
               size="sm"

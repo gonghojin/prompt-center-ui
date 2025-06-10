@@ -1,32 +1,32 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import {useState} from "react"
 import Link from "next/link"
-import { Button } from "@components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card"
-import { Input } from "@components/ui/input"
-import { Label } from "@components/ui/label"
-import { Textarea } from "@components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
-import { Switch } from "@components/ui/switch"
-import { Badge } from "@components/ui/badge"
+import {Button} from "@components/ui/button"
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@components/ui/card"
+import {Input} from "@components/ui/input"
+import {Label} from "@components/ui/label"
+import {Textarea} from "@components/ui/textarea"
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@components/ui/select"
+import {Switch} from "@components/ui/switch"
+import {Badge} from "@components/ui/badge"
 import {
   ArrowLeft,
-  Save,
-  Eye,
-  Plus,
-  X,
-  Code2,
-  Palette,
   BarChart3,
+  Code2,
+  Eye,
+  FileText,
   Globe,
   Lock,
-  FileText,
+  Palette,
+  Plus,
+  Save,
+  X,
 } from "lucide-react"
-import { useCategories } from "@/app/hooks/useCategories"
-import { CategorySelect } from "@/components/category/CategorySelect"
-import { fetchWithAuth } from "@/app/api/fetchWithAuth"
+import {useCategories} from "@/app/hooks/useCategories"
+import {CategorySelect} from "@/components/category/CategorySelect"
+import {fetchWithAuth} from "@/app/api/fetchWithAuth"
 
 const PromptVisibility = {
   PUBLIC: "PUBLIC",
@@ -432,8 +432,9 @@ const PromptTemplateSuggestions = ({ handleTemplateClick }: PromptTemplateSugges
 
 type PromptSaveActionsProps = {
   handleSubmit: () => void;
+  handleDraftSave: () => void;
 };
-const PromptSaveActions = ({ handleSubmit }: PromptSaveActionsProps) => (
+const PromptSaveActions = ({handleSubmit, handleDraftSave}: PromptSaveActionsProps) => (
   <Card className="bg-white/10 backdrop-blur-sm border-white/20">
     <CardHeader>
       <CardTitle className="text-white">저장 옵션</CardTitle>
@@ -446,7 +447,11 @@ const PromptSaveActions = ({ handleSubmit }: PromptSaveActionsProps) => (
         <Save className="h-4 w-4 mr-2" />
         저장하고 게시
       </Button>
-      <Button variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
+      <Button
+          onClick={handleDraftSave}
+          variant="outline"
+          className="w-full border-white/30 text-white hover:bg-white/10"
+      >
         임시 저장
       </Button>
     </CardContent>
@@ -537,6 +542,46 @@ export default function NewPromptPage() {
       variablesSchema: {},
       categoryId: parseInt(category),
       visibility,
+      status: PromptStatus.PUBLISHED,
+    };
+    try {
+      const response = await fetchWithAuth("/api/v1/prompts", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(promptData),
+      });
+      if (!response.ok) {
+        let errorMsg = "프롬프트 게시에 실패했습니다.";
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch {
+        }
+        throw new Error(errorMsg);
+      }
+      alert("프롬프트가 성공적으로 게시되었습니다.");
+      window.location.href = "/prompts";
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "프롬프트 게시 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleDraftSave = async () => {
+    if (!title || !description || !content || !category) {
+      alert("필수 필드를 모두 입력해주세요.");
+      return;
+    }
+    const promptData = {
+      title,
+      description,
+      content,
+      createdBy: TEMP_SYSTEM_USER,
+      tags,
+      tagIds: [],
+      inputVariables: templateVariables,
+      variablesSchema: {},
+      categoryId: parseInt(category),
+      visibility,
       status: PromptStatus.DRAFT,
     };
     try {
@@ -546,17 +591,17 @@ export default function NewPromptPage() {
         body: JSON.stringify(promptData),
       });
       if (!response.ok) {
-        let errorMsg = "프롬프트 생성에 실패했습니다.";
+        let errorMsg = "프롬프트 임시 저장에 실패했습니다.";
         try {
           const errorData = await response.json();
           errorMsg = errorData.message || errorMsg;
         } catch {}
         throw new Error(errorMsg);
       }
-      alert("프롬프트가 성공적으로 저장되었습니다.");
+      alert("프롬프트가 임시 저장되었습니다.");
       window.location.href = "/prompts";
     } catch (error) {
-      alert(error instanceof Error ? error.message : "프롬프트 저장 중 오류가 발생했습니다.");
+      alert(error instanceof Error ? error.message : "프롬프트 임시 저장 중 오류가 발생했습니다.");
     }
   };
 
@@ -635,7 +680,7 @@ export default function NewPromptPage() {
               handleToggleTeam={handleToggleTeam}
             />
             <PromptTemplateSuggestions handleTemplateClick={handleTemplateClick} />
-            <PromptSaveActions handleSubmit={handleSubmit} />
+            <PromptSaveActions handleSubmit={handleSubmit} handleDraftSave={handleDraftSave}/>
           </div>
         </div>
       </div>

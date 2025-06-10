@@ -1,17 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import type { JSX } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Badge } from "@components/ui/badge"
-import { Button } from "@components/ui/button"
-import { Loader2, ArrowLeft, Share2, Heart, Eye, Star, User, Clock, Code2, Palette, BarChart3, Database } from "lucide-react"
-import Link from "next/link"
-import { useCategories } from "@/app/hooks/useCategories"
-import { CategoryBadge } from "@/components/category/CategoryBadge"
-import { Category } from "@/app/types/category"
+import type {JSX} from "react"
+import {useEffect, useState} from "react"
+import {useParams, useRouter} from "next/navigation"
+import {Badge} from "@components/ui/badge"
+import {Button} from "@components/ui/button"
+import {
+  ArrowLeft,
+  BarChart3,
+  Clock,
+  Code2,
+  Copy,
+  Database,
+  Eye,
+  Heart,
+  Loader2,
+  Palette,
+  Share2,
+  User
+} from "lucide-react"
+import {useCategories} from "@/app/hooks/useCategories"
+import {CategoryBadge} from "@/components/category/CategoryBadge"
+import {Category} from "@/app/types/category"
 import ReactMarkdown from "react-markdown"
-import { fetchWithAuth } from "@/app/api/fetchWithAuth"
+import {fetchWithAuth} from "@/app/api/fetchWithAuth"
+import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
+import {FavoriteButton} from "@components/prompts/FavoriteButton"
 
 interface ApiPrompt {
   id: string
@@ -32,6 +46,7 @@ interface ApiPrompt {
   visibility: string
   status: string
   public: boolean
+  favorite?: boolean
 }
 
 const categoryIconMap: Record<string, JSX.Element> = {
@@ -55,7 +70,7 @@ const PromptDetailPage = () => {
   const [prompt, setPrompt] = useState<ApiPrompt | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [liked, setLiked] = useState(false)
+  const [favorite, setFavorite] = useState(false)
   const { categories } = useCategories()
 
   // 카테고리 정보 추출
@@ -78,6 +93,10 @@ const PromptDetailPage = () => {
       .finally(() => setLoading(false))
   }, [id])
 
+  useEffect(() => {
+    setFavorite(!!prompt?.favorite)
+  }, [prompt])
+
   const handleBack = () => {
     router.back()
   }
@@ -90,9 +109,35 @@ const PromptDetailPage = () => {
       .catch(() => alert("클립보드 복사 실패"))
   }
 
-  const handleLike = () => {
-    setLiked((prev) => !prev)
-  }
+  const handleFavorite = async () => {
+    if (!prompt) return;
+    const prevFavorite = favorite;
+    setFavorite((prev) => !prev);
+    try {
+      if (prevFavorite) {
+        await removeFavoritePrompt(prompt.id);
+      } else {
+        await addFavoritePrompt(prompt.id);
+      }
+    } catch (e: any) {
+      setFavorite(prevFavorite); // 롤백
+      alert(e.message || "즐겨찾기 처리 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleCopyContent = async () => {
+    if (!prompt) return;
+    if (!navigator.clipboard) {
+      alert("이 브라우저는 복사 기능을 지원하지 않습니다.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(prompt.content);
+      alert("복사되었습니다!");
+    } catch (e) {
+      alert("복사 실패");
+    }
+  };
 
   if (loading) {
     return (
@@ -189,7 +234,23 @@ const PromptDetailPage = () => {
           </div>
         </div>
         <div className="mb-6">
-          <h2 className="text-white font-semibold mb-2">본문</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-white font-semibold">본문</h2>
+            <Button
+                size="sm"
+                variant="ghost"
+                className="text-white/70 hover:text-white p-1 flex items-center gap-1"
+                onClick={handleCopyContent}
+                aria-label="본문 복사"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleCopyContent();
+                }}
+            >
+              <Copy className="h-4 w-4"/>
+              <span className="text-xs">복사</span>
+            </Button>
+          </div>
           <pre className="bg-black/40 text-white p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm">
             {prompt.content}
           </pre>
@@ -198,7 +259,7 @@ const PromptDetailPage = () => {
           <div className="flex items-center gap-4 text-xs text-white/60">
             <span className="flex items-center gap-1">
               <Heart className="h-3 w-3" />
-              {liked ? prompt.favoriteCount + 1 : prompt.favoriteCount}
+              {prompt.favoriteCount}
             </span>
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
@@ -216,16 +277,10 @@ const PromptDetailPage = () => {
             >
               <Share2 className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-white/70 hover:text-white p-1"
-              onClick={handleLike}
-              aria-label="좋아요"
-              tabIndex={0}
-            >
-              <Star className={`h-4 w-4 ${liked ? "text-yellow-400 fill-current" : ""}`} />
-            </Button>
+            <FavoriteButton
+                promptId={prompt.id}
+                initialFavorite={!!prompt.favorite}
+            />
           </div>
         </div>
       </div>
