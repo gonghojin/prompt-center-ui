@@ -57,12 +57,6 @@ export const useMyPrompts = () => {
     return res.json();
   };
 
-  const fetchPromptStatistics = async () => {
-    const res = await fetchWithAuth("/api/v1/prompts/my/statistics");
-    if (!res.ok) throw new Error("통계 정보를 불러오지 못했습니다.");
-    return res.json();
-  };
-
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -129,4 +123,10 @@ export const useMyPrompts = () => {
     visibilityFilter,
     setVisibilityFilter,
   };
+};
+
+export const fetchPromptStatistics = async () => {
+  const res = await fetchWithAuth("/api/v1/prompts/my/statistics");
+  if (!res.ok) throw new Error("통계 정보를 불러오지 못했습니다.");
+  return res.json();
 }; 

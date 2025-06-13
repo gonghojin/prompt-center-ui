@@ -17,6 +17,10 @@ import {useMyPrompts} from "@/app/hooks/useMyPrompts"
 import {useFavoritePrompts} from "@/app/hooks/useFavoritePrompts"
 import {useFavoriteCount} from "@/app/hooks/useFavoriteCount"
 import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
+import {deletePrompt} from "@/app/api/promptsApi"
+import {useRouter} from "next/navigation";
+import {fetchPromptStatistics} from "@/app/hooks/useMyPrompts"
+import {useToast} from "@/components/ui/useToast";
 
 type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
 type VisibilityType = 'PUBLIC' | 'TEAM' | 'PRIVATE';
@@ -51,7 +55,6 @@ export default function MyPromptsPage() {
     currentPage,
     setCurrentPage,
     totalPages,
-    statistics,
     searchQuery,
     setSearchQuery,
     statusFilter,
@@ -99,18 +102,19 @@ export default function MyPromptsPage() {
   ])
 
   const [favoriteLoadingId, setFavoriteLoadingId] = useState<string | null>(null);
+  const [promptIdToDelete, setPromptIdToDelete] = useState<string | null>(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const statusLabel: Record<StatusType, string> = {
+  const statusLabel: Record<Exclude<StatusType, 'DELETED'>, string> = {
     DRAFT: "임시저장",
     PUBLISHED: "게시됨",
     ARCHIVED: "보관됨",
-    DELETED: "삭제됨",
   }
-  const statusColor: Record<StatusType, string> = {
+  const statusColor: Record<Exclude<StatusType, 'DELETED'>, string> = {
     DRAFT: "bg-yellow-600 text-white",
     PUBLISHED: "bg-green-600 text-white",
     ARCHIVED: "bg-gray-600 text-white",
-    DELETED: "bg-red-600 text-white",
   }
   const visibilityLabel: Record<VisibilityType, string> = {
     PUBLIC: "전체 공개",
@@ -125,8 +129,15 @@ export default function MyPromptsPage() {
 
   const {categories} = useCategories()
 
+  const router = useRouter();
+  const {showToast} = useToast();
+
   const handleEditPrompt = (id: string) => {
-    alert(`Editing prompt with ID: ${id}`)
+    router.push(`/prompts/${id}/edit?from=my-prompts`);
+  }
+
+  const handleViewPrompt = (id: string) => {
+    router.push(`/prompts/${id}?from=my-prompts`);
   }
 
   const handleArchivePrompt = (id: string) => {
@@ -134,16 +145,60 @@ export default function MyPromptsPage() {
   }
 
   const handleDeletePrompt = (id: string) => {
-    setMyPrompts((prev) => prev.map((p) => p.id === id ? {...p, status: "DELETED"} : p))
+    setPromptIdToDelete(id);
+    setDeleteError(null);
   }
 
+  const [statistics, setStatistics] = useState<any>(null);
+
+  useEffect(() => {
+    // useMyPrompts의 statistics를 page.tsx의 statistics로 동기화
+    fetchPromptStatistics().then(setStatistics);
+  }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!promptIdToDelete) return;
+    setIsDeleteLoading(true);
+    setDeleteError(null);
+    // Optimistic UI: 통계값 즉시 감소
+    setStatistics((prev: any) => prev ? {
+      ...prev,
+      totalCount: Math.max(0, prev.totalCount - 1)
+    } : prev);
+    try {
+      await deletePrompt(promptIdToDelete);
+      setMyPrompts((prev) => prev.map((p) => p.id === promptIdToDelete ? {
+        ...p,
+        status: "DELETED"
+      } : p));
+      setPromptIdToDelete(null);
+      showToast({type: "success", message: "프롬프트가 삭제되었습니다."});
+      // 통계 API로 동기화
+      const statsRes = await fetchPromptStatistics();
+      setStatistics(statsRes);
+    } catch (e: any) {
+      setDeleteError(e.message || "프롬프트 삭제 중 오류가 발생했습니다.");
+      showToast({type: "error", message: e.message || "프롬프트 삭제 중 오류가 발생했습니다."});
+    } finally {
+      setIsDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setPromptIdToDelete(null);
+    setDeleteError(null);
+  };
+
   const handleSharePrompt = (id: string) => {
-    alert(`Sharing prompt with ID: ${id}`)
+    showToast({type: "info", message: `프롬프트 공유 기능은 준비 중입니다. (ID: ${id})`});
   }
 
   const handleToggleFavorite = async (id: string) => {
     if (favoriteLoadingId) return; // 중복 방지
     setFavoriteLoadingId(id);
+
+    // 현재 즐겨찾기 상태 확인 (promptUuid와 id 비교)
+    const isFavorite = favoritePrompts.some((favPrompt) => favPrompt.promptUuid === id);
 
     // Optimistic UI: myPrompts에서 favorite 값 즉시 토글
     setMyPrompts((prev) =>
@@ -151,33 +206,31 @@ export default function MyPromptsPage() {
             p.id === id ? {...p, favorite: !p.favorite} : p
         )
     );
-
-    // 즐겨찾기 카운트 Optimistic 증감
-    const promptToToggle = myPrompts.find((prompt) => prompt.id === id);
-    const isFavorite = favoritePrompts.some((favPrompt) => favPrompt.promptUuid === id);
     setFavoriteCount((prev) => isFavorite ? prev - 1 : prev + 1);
 
-    if (promptToToggle) {
-      try {
-        if (isFavorite) {
-          await removeFavoritePrompt(id);
-        } else {
-          await addFavoritePrompt(id);
-        }
-        reloadFavoritePrompts();
-      } catch (e: any) {
-        // 실패 시 롤백
-        setMyPrompts((prev) =>
-            prev.map((p) =>
-                p.id === id ? {...p, favorite: !p.favorite} : p
-            )
-        );
-        setFavoriteCount((prev) => isFavorite ? prev + 1 : prev - 1);
-        alert(e.message || "즐겨찾기 처리 중 오류가 발생했습니다.");
-      } finally {
-        setFavoriteLoadingId(null);
+    try {
+      if (isFavorite) {
+        await removeFavoritePrompt(id);
+      } else {
+        await addFavoritePrompt(id);
       }
-    } else {
+      // 즐겨찾기 목록 새로고침 및 myPrompts 동기화
+      reloadFavoritePrompts();
+      setMyPrompts((prev) =>
+          prev.map((p) =>
+              p.id === id ? {...p, favorite: !isFavorite} : p
+          )
+      );
+    } catch (e: any) {
+      // 실패 시 롤백
+      setMyPrompts((prev) =>
+          prev.map((p) =>
+              p.id === id ? {...p, favorite: isFavorite} : p
+          )
+      );
+      setFavoriteCount((prev) => isFavorite ? prev + 1 : prev - 1);
+      showToast({type: "error", message: e.message || "즐겨찾기 처리 중 오류가 발생했습니다."});
+    } finally {
       setFavoriteLoadingId(null);
     }
   };
@@ -186,7 +239,7 @@ export default function MyPromptsPage() {
     const promptToCopy = myPrompts.find((prompt) => prompt.id === id)
     if (promptToCopy) {
       navigator.clipboard.writeText(`Title: ${promptToCopy.title}\nDescription: ${promptToCopy.description}`)
-      alert("Prompt copied to clipboard!")
+      showToast({type: "success", message: "프롬프트가 클립보드에 복사되었습니다!"});
     }
   }
 
@@ -230,7 +283,7 @@ export default function MyPromptsPage() {
 
   // 통계 카드 4개로 고정
   const stats = [
-    {label: "내 프롬프트", value: myPrompts.length, color: "text-blue-400"},
+    {label: "내 프롬프트", value: statistics?.totalCount ?? 0, color: "text-blue-400"},
     {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
     {
       label: "총 조회수",
@@ -243,6 +296,11 @@ export default function MyPromptsPage() {
       color: "text-red-400"
     },
   ];
+
+  // statusFilter에서 DELETED 제외
+  const filteredStatusFilter = Object.fromEntries(
+      Object.entries(statusFilter).filter(([k]) => k !== 'DELETED')
+  ) as Record<Exclude<StatusType, 'DELETED'>, boolean>;
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -333,6 +391,7 @@ export default function MyPromptsPage() {
                                 setFavoriteCount((prev) => isFavorite ? prev + 1 : Math.max(prev - 1, 0));
                                 reloadFavoritePrompts();
                               }}
+                              onView={handleViewPrompt}
                           />
                       ))
                   )}
@@ -458,7 +517,7 @@ export default function MyPromptsPage() {
               <PromptFilters
                   statusLabel={statusLabel}
                   statusColor={statusColor}
-                  statusFilter={statusFilter}
+                  statusFilter={filteredStatusFilter}
                   onStatusChange={handleStatusFilterChange}
                   visibilityLabel={visibilityLabel}
                   visibilityColor={visibilityColor}
@@ -468,6 +527,39 @@ export default function MyPromptsPage() {
             </div>
           </div>
         </div>
+
+        {/* 삭제 확인 모달 */}
+        {promptIdToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 role="dialog" aria-modal="true">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+                <h2 className="text-lg font-bold mb-2 text-gray-900">정말 삭제하시겠습니까?</h2>
+                <p className="mb-4 text-gray-700">삭제된 프롬프트는 복구할 수 없습니다.</p>
+                {deleteError && (
+                    <div
+                        className="mb-2 p-2 bg-red-100 text-red-600 rounded text-sm">{deleteError}</div>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                      className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none"
+                      onClick={handleCancelDelete}
+                      disabled={isDeleteLoading}
+                      aria-label="삭제 취소"
+                  >
+                    취소
+                  </button>
+                  <button
+                      className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 focus:outline-none disabled:opacity-60"
+                      onClick={handleConfirmDelete}
+                      disabled={isDeleteLoading}
+                      aria-label="프롬프트 삭제"
+                  >
+                    {isDeleteLoading ? "삭제 중..." : "삭제"}
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
       </div>
   )
 }

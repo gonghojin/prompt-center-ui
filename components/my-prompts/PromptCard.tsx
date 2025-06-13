@@ -21,6 +21,7 @@ interface PromptCardProps {
   onShare: (id: string) => void;
   onCopy: (id: string) => void;
   onFavoriteSuccess?: (id: string, isFavorite: boolean) => void;
+  onView?: (id: string) => void;
 }
 
 export const PromptCard: FC<PromptCardProps> = ({
@@ -34,6 +35,7 @@ export const PromptCard: FC<PromptCardProps> = ({
                                                   onShare,
                                                   onCopy,
                                                   onFavoriteSuccess,
+                                                  onView,
                                                 }) => {
   const icon = prompt.icon || categoryIconMap[prompt.category.name] || categoryIconMap.default;
   return (
@@ -133,16 +135,28 @@ export const PromptCard: FC<PromptCardProps> = ({
               >
                 <Trash2 className="h-4 w-4"/>
               </Button>
-              <Link href={`/prompts/${prompt.id}`}>
-                <Button
-                    size="sm"
-                    className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
-                    aria-label="보기"
-                    tabIndex={0}
-                >
-                  보기
-                </Button>
-              </Link>
+              {onView ? (
+                  <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                      aria-label="보기"
+                      tabIndex={0}
+                      onClick={() => onView(prompt.id)}
+                  >
+                    보기
+                  </Button>
+              ) : (
+                  <Link href={`/prompts/${prompt.id}`}>
+                    <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                        aria-label="보기"
+                        tabIndex={0}
+                    >
+                      보기
+                    </Button>
+                  </Link>
+              )}
             </div>
           </div>
         </CardContent>

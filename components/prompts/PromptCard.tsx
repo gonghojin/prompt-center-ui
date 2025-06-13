@@ -13,9 +13,19 @@ interface PromptCardProps {
   prompt: Prompt;
   onLike: (id: string) => void;
   onShare: (id: string) => void;
+  onFavorite?: (id: string) => Promise<void>;
+  onFavoriteSuccess?: (isFavorite: boolean) => void;
+  onFavoriteError?: (e: Error) => void;
 }
 
-export const PromptCard: FC<PromptCardProps> = ({prompt, onLike, onShare}) => (
+export const PromptCard: FC<PromptCardProps> = ({
+                                                  prompt,
+                                                  onLike,
+                                                  onShare,
+                                                  onFavorite,
+                                                  onFavoriteSuccess,
+                                                  onFavoriteError
+                                                }) => (
   <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 group">
     <CardHeader>
       <div className="flex items-start justify-between">
@@ -93,6 +103,8 @@ export const PromptCard: FC<PromptCardProps> = ({prompt, onLike, onShare}) => (
           <FavoriteButton
               promptId={prompt.id}
               initialFavorite={!!prompt.favorite}
+              onSuccess={onFavoriteSuccess}
+              onError={onFavoriteError}
           />
           <Link href={`/prompts/${prompt.id}`} tabIndex={0} aria-label="프롬프트 상세 보기">
             <Button
