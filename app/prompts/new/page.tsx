@@ -27,6 +27,8 @@ import {
 import {useCategories} from "@/app/hooks/useCategories"
 import {CategorySelect} from "@/components/category/CategorySelect"
 import {fetchWithAuth} from "@/app/api/fetchWithAuth"
+import {useSearchParams} from "next/navigation"
+import {useToast} from "@/components/ui/useToast"
 
 const PromptVisibility = {
   PUBLIC: "PUBLIC",
@@ -477,6 +479,7 @@ export default function NewPromptPage() {
     defaultValue: "",
   });
   const [visibility, setVisibility] = useState<typeof PromptVisibility[keyof typeof PromptVisibility]>(PromptVisibility.PUBLIC);
+  const {showToast} = useToast();
 
   const teams = [
     "Backend Team",
@@ -486,6 +489,9 @@ export default function NewPromptPage() {
     "Architecture Team",
     "QA Team",
   ];
+
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const from = searchParams?.get("from");
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -528,7 +534,7 @@ export default function NewPromptPage() {
   };
   const handleSubmit = async () => {
     if (!title || !description || !content || !category) {
-      alert("필수 필드를 모두 입력해주세요.");
+      showToast({type: "error", message: "필수 필드를 모두 입력해주세요."});
       return;
     }
     const promptData = {
@@ -559,16 +565,26 @@ export default function NewPromptPage() {
         }
         throw new Error(errorMsg);
       }
-      alert("프롬프트가 성공적으로 게시되었습니다.");
-      window.location.href = "/prompts";
+      const data = await response.json();
+      showToast({type: "success", message: "프롬프트가 성공적으로 게시되었습니다."});
+      setTimeout(() => {
+        if (from === "my-prompts") {
+          window.location.href = `/prompts/${data.id}?from=my-prompts`;
+        } else {
+          window.location.href = `/prompts/${data.id}`;
+        }
+      }, 1200);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "프롬프트 게시 중 오류가 발생했습니다.");
+      showToast({
+        type: "error",
+        message: error instanceof Error ? error.message : "프롬프트 게시 중 오류가 발생했습니다."
+      });
     }
   };
 
   const handleDraftSave = async () => {
     if (!title || !description || !content || !category) {
-      alert("필수 필드를 모두 입력해주세요.");
+      showToast({type: "error", message: "필수 필드를 모두 입력해주세요."});
       return;
     }
     const promptData = {
@@ -598,10 +614,15 @@ export default function NewPromptPage() {
         } catch {}
         throw new Error(errorMsg);
       }
-      alert("프롬프트가 임시 저장되었습니다.");
-      window.location.href = "/prompts";
+      showToast({type: "success", message: "프롬프트가 임시 저장되었습니다."});
+      setTimeout(() => {
+        window.location.href = "/prompts";
+      }, 1200);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "프롬프트 임시 저장 중 오류가 발생했습니다.");
+      showToast({
+        type: "error",
+        message: error instanceof Error ? error.message : "프롬프트 임시 저장 중 오류가 발생했습니다."
+      });
     }
   };
 

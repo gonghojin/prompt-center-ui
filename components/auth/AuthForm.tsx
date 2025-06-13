@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import {Loader2, AlertTriangle, CheckCircle, XCircle} from 'lucide-react';
 import { useAuth } from '@/app/hooks/useAuth';
 
 type AuthFormType = 'login' | 'register';
@@ -18,7 +18,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     email: '',
     password: '',
     confirmPassword: '',
-    agree: false,
   });
   const [localError, setLocalError] = useState('');
   const router = useRouter();
@@ -28,7 +27,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
     const { name, value, type: inputType, checked } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: inputType === 'checkbox' ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -55,6 +54,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
       // error는 useAuth에서 관리
     }
   };
+
+  const passwordRules = [
+    {
+      label: '비밀번호는 8자 이상이어야 합니다.',
+      test: (pw: string) => pw.length >= 8,
+    },
+    {
+      label: '비밀번호에는 영문자가 포함되어야 합니다.',
+      test: (pw: string) => /[A-Za-z]/.test(pw),
+    },
+    {
+      label: '비밀번호에는 숫자가 포함되어야 합니다.',
+      test: (pw: string) => /[0-9]/.test(pw),
+    },
+    {
+      label: '비밀번호에는 특수문자가 포함되어야 합니다.',
+      test: (pw: string) => /[!@#$%^&*()]/.test(pw),
+    },
+  ];
 
   return (
     <form
@@ -100,6 +118,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         aria-label="비밀번호"
         autoComplete={type === 'login' ? 'current-password' : 'new-password'}
       />
+      {/* 비밀번호 조건 안내 */}
+      {type === 'register' && (
+          <ul className="mt-2 mb-1 space-y-1 text-sm" aria-live="polite">
+            {passwordRules.map((rule, idx) => {
+              const passed = rule.test(form.password);
+              return (
+                  <li key={idx}
+                      className={passed ? 'text-green-600 dark:text-green-400 flex items-center gap-1' : 'text-gray-400 flex items-center gap-1'}>
+                    {passed ? (
+                        <CheckCircle className="w-4 h-4 mr-1" aria-hidden="true"/>
+                    ) : (
+                        <XCircle className="w-4 h-4 mr-1" aria-hidden="true"/>
+                    )}
+                    {rule.label}
+                  </li>
+              );
+            })}
+          </ul>
+      )}
       {type === 'register' && (
         <input
           type="password"
@@ -112,20 +149,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
           aria-label="비밀번호 확인"
           autoComplete="new-password"
         />
-      )}
-      {type === 'register' && (
-        <label className="flex items-center gap-3 text-base select-none mt-1">
-          <input
-            type="checkbox"
-            name="agree"
-            checked={form.agree}
-            onChange={handleChange}
-            required
-            aria-label="약관 동의"
-            className="accent-cyan-500 scale-125 focus:ring-2 focus:ring-cyan-400 rounded-md"
-          />
-          <span className="text-gray-700 dark:text-gray-200">이용약관에 동의합니다.</span>
-        </label>
       )}
       {(localError || error) && (
         <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg px-3 py-2 text-base text-center justify-center shadow-sm" role="alert">

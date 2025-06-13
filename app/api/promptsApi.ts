@@ -43,4 +43,20 @@ export const createPrompt = async (data: PromptCreatePayload) => {
     throw new Error(errorMsg);
   }
   return res.json();
+};
+
+export const deletePrompt = async (id: string) => {
+  const res = await fetchWithAuth(`/api/v1/prompts/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    let errorMsg = "프롬프트 삭제에 실패했습니다.";
+    try {
+      const errorData = await res.json();
+      errorMsg = errorData.message || errorMsg;
+    } catch {
+    }
+    throw new Error(errorMsg);
+  }
+  return res.json();
 }; 
