@@ -21,7 +21,7 @@ export const PromptQuickActions: FC<PromptQuickActionsProps> = ({
           <CardTitle className="text-white">빠른 작업</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Link href="/prompts/new">
+          <Link href="/prompts/new?from=my-prompts">
             <Button
                 className="w-full justify-start bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
                 onClick={onNewPrompt}

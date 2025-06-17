@@ -20,6 +20,13 @@ import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
 import {INITIAL_ACTIVITY, STATUS_CONFIG, VISIBILITY_CONFIG} from "@/app/constants/my-prompts"
 import type {ActivityLog, ActivityType, Stat} from "@/app/types/my-prompts"
 import {useDebounce} from "@/app/hooks/useDebounce"
+import {deletePrompt} from "@/app/api/promptsApi"
+import {useRouter} from "next/navigation";
+import {fetchPromptStatistics} from "@/app/hooks/useMyPrompts"
+import {useToast} from "@/components/ui/useToast";
+
+type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
+type VisibilityType = 'PUBLIC' | 'TEAM' | 'PRIVATE';
 
 type FavoritePrompt = {
   id: string;
@@ -457,6 +464,39 @@ export default function MyPromptsPage() {
             </div>
           </div>
         </div>
+
+        {/* 삭제 확인 모달 */}
+        {promptIdToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                 role="dialog" aria-modal="true">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+                <h2 className="text-lg font-bold mb-2 text-gray-900">정말 삭제하시겠습니까?</h2>
+                <p className="mb-4 text-gray-700">삭제된 프롬프트는 복구할 수 없습니다.</p>
+                {deleteError && (
+                    <div
+                        className="mb-2 p-2 bg-red-100 text-red-600 rounded text-sm">{deleteError}</div>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                      className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none"
+                      onClick={handleCancelDelete}
+                      disabled={isDeleteLoading}
+                      aria-label="삭제 취소"
+                  >
+                    취소
+                  </button>
+                  <button
+                      className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 focus:outline-none disabled:opacity-60"
+                      onClick={handleConfirmDelete}
+                      disabled={isDeleteLoading}
+                      aria-label="프롬프트 삭제"
+                  >
+                    {isDeleteLoading ? "삭제 중..." : "삭제"}
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
       </div>
   )
 }

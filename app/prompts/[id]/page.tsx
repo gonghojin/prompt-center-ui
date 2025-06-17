@@ -2,7 +2,7 @@
 
 import type {JSX} from "react"
 import {useEffect, useState} from "react"
-import {useParams, useRouter} from "next/navigation"
+import {useParams, useRouter, useSearchParams} from "next/navigation"
 import {Badge} from "@components/ui/badge"
 import {Button} from "@components/ui/button"
 import {
@@ -25,6 +25,8 @@ import ReactMarkdown from "react-markdown"
 import {fetchWithAuth} from "@/app/api/fetchWithAuth"
 import {FavoriteButton} from "@components/prompts/FavoriteButton"
 import {LikeButton} from "@components/prompts/LikeButton"
+import Link from "next/link"
+import {useToast} from "@/components/ui/useToast"
 
 interface ApiPrompt {
   id: string
@@ -66,6 +68,8 @@ const formatDate = (dateStr?: string) => {
 const PromptDetailPage = () => {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
   const { id } = params
   const [prompt, setPrompt] = useState<ApiPrompt | null>(null)
   const [loading, setLoading] = useState(true)
@@ -75,6 +79,7 @@ const PromptDetailPage = () => {
   const [likeCount, setLikeCount] = useState(0)
   const [likeLoading, setLikeLoading] = useState(false)
   const { categories } = useCategories()
+  const {showToast} = useToast();
 
   // 카테고리 정보 추출
   const category: Category | undefined = categories.find((c) => c.id === prompt?.categoryId)
@@ -105,15 +110,15 @@ const PromptDetailPage = () => {
   }, [prompt])
 
   const handleBack = () => {
-    router.back()
+    router.push("/prompts");
   }
 
   const handleShare = () => {
     if (!prompt) return
     const url = `${window.location.origin}/prompts/${prompt.id}`
     navigator.clipboard.writeText(url)
-      .then(() => alert("URL이 복사되었습니다!"))
-      .catch(() => alert("클립보드 복사 실패"))
+    .then(() => showToast({type: "success", message: "URL이 복사되었습니다!"}))
+    .catch(() => showToast({type: "error", message: "클립보드 복사 실패"}))
   }
 
   const handleToggleLike = async () => {
@@ -142,14 +147,14 @@ const PromptDetailPage = () => {
   const handleCopyContent = async () => {
     if (!prompt) return;
     if (!navigator.clipboard) {
-      alert("이 브라우저는 복사 기능을 지원하지 않습니다.");
+      showToast({type: "error", message: "이 브라우저는 복사 기능을 지원하지 않습니다."});
       return;
     }
     try {
       await navigator.clipboard.writeText(prompt.content);
-      alert("복사되었습니다!");
+      showToast({type: "success", message: "복사되었습니다!"});
     } catch (e) {
-      alert("복사 실패");
+      showToast({type: "error", message: "복사 실패"});
     }
   };
 
@@ -299,6 +304,14 @@ const PromptDetailPage = () => {
             <FavoriteButton
                 promptId={prompt.id}
                 initialFavorite={prompt.favorite}
+                onSuccess={(isFavorite) => showToast({
+                  type: isFavorite ? "success" : "info",
+                  message: isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기에서 제거되었습니다."
+                })}
+                onError={(e) => showToast({
+                  type: "error",
+                  message: e.message || "즐겨찾기 처리 중 오류가 발생했습니다."
+                })}
             />
           </div>
         </div>
