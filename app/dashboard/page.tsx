@@ -156,7 +156,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <DashboardStats stats={stats} error={statsError} loading={statsLoading}/>
+        <DashboardStats stats={stats} error={statsError ?? undefined} loading={statsLoading}/>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Recent Prompts */}

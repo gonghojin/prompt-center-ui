@@ -17,6 +17,7 @@ export interface ApiPrompt {
   status: string;
   public: boolean;
   favorite: boolean;
+  liked: boolean;
   createdByName: string;
 }
 
@@ -35,26 +36,19 @@ export interface Prompt {
   isPublic?: boolean;
   status?: string;
   visibility?: string;
+  liked?: boolean;
 }
 
-export interface FavoritePrompt {
-  favoriteId: number;
+export type FavoritePrompt = {
+  favoriteId: string;
   promptUuid: string;
   title: string;
   description: string;
-  tags: string[];
-  createdById: number;
+  categoryId: string;
   createdByName: string;
-  categoryId: number;
-  visibility: "PUBLIC" | "TEAM" | "PRIVATE";
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED";
-  promptCreatedAt: string;
-  promptUpdatedAt: string;
-  favoriteCreatedAt: string;
-  viewCount: number;
   favoriteCount: number;
-  category?: Category;
-  author?: string;
-  icon?: JSX.Element;
-  favorite?: boolean;
-} 
+  viewCount: number;
+  promptUpdatedAt: string;
+  tags: string[];
+  liked?: boolean;
+}; 

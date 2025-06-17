@@ -59,6 +59,7 @@ export const usePrompts = () => {
             icon,
             favorite: item.favorite,
             isPublic: item.public,
+            liked: item.liked
           };
         });
         setPrompts(mapped);
