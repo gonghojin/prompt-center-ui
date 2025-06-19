@@ -4,7 +4,8 @@ import {Card, CardContent} from "@components/ui/card"
 import {Input} from "@components/ui/input"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@components/ui/tabs"
 import {Archive, Clock, Edit, Plus, Search, Share2,} from "lucide-react"
-import {useCallback, useEffect, useMemo, useState} from "react"
+import {useCallback, useEffect, useState} from "react"
+import {useCategories} from "@/app/hooks/useCategories"
 import type {Category} from "@/app/types/category"
 import {PromptCard} from "@components/my-prompts/PromptCard"
 import {FavoritePromptCard} from "@components/my-prompts/FavoritePromptCard"
@@ -12,18 +13,15 @@ import {PromptStats} from "@components/my-prompts/PromptStats"
 import {PromptFilters} from "@components/my-prompts/PromptFilters"
 import {PromptActivity} from "@components/my-prompts/PromptActivity"
 import {PromptQuickActions} from "@components/my-prompts/PromptQuickActions"
-import {useMyPrompts} from "@/app/hooks/useMyPrompts"
+import {fetchPromptStatistics, useMyPrompts} from "@/app/hooks/useMyPrompts"
 import {useFavoritePrompts} from "@/app/hooks/useFavoritePrompts"
 import {useFavoriteCount} from "@/app/hooks/useFavoriteCount"
 import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
-import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
-import {INITIAL_ACTIVITY, STATUS_CONFIG, VISIBILITY_CONFIG} from "@/app/constants/my-prompts"
-import type {ActivityLog, ActivityType, Stat} from "@/app/types/my-prompts"
-import {useDebounce} from "@/app/hooks/useDebounce"
 import {deletePrompt} from "@/app/api/promptsApi"
 import {useRouter} from "next/navigation";
-import {fetchPromptStatistics} from "@/app/hooks/useMyPrompts"
 import {useToast} from "@/components/ui/useToast";
+import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
+import {useDebounce} from "@/app/hooks/useDebounce"
 
 type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
 type VisibilityType = 'PUBLIC' | 'TEAM' | 'PRIVATE';
@@ -40,14 +38,16 @@ type FavoritePrompt = {
   tags: string[];
 };
 
-export default function MyPromptsPage() {
-  const [activeTab, setActiveTab] = useState("my-prompts")
-  const [recentActivity, setRecentActivity] = useState<ActivityLog[]>(INITIAL_ACTIVITY)
-  const [favoriteLoadingId, setFavoriteLoadingId] = useState<string | null>(null)
-  const [favoriteCount, setFavoriteCount] = useState(0)
-  const [searchInput, setSearchInput] = useState("")
-  const debouncedSearch = useDebounce(searchInput, 300)
+type ActivityType = 'CREATE' | 'EDIT' | 'PUBLISH' | 'ARCHIVE';
+type ActivityLog = {
+  action: string;
+  actionType: ActivityType;
+  prompt: string;
+  time: string;
+};
 
+export default function MyPromptsPage() {
+  // useMyPrompts 훅 사용
   const {
     myPrompts,
     setMyPrompts,
@@ -62,8 +62,11 @@ export default function MyPromptsPage() {
     setStatusFilter,
     visibilityFilter,
     setVisibilityFilter,
-  } = useMyPrompts()
+  } = useMyPrompts();
 
+  const [activeTab, setActiveTab] = useState("my-prompts")
+
+  // 즐겨찾기 프롬프트 API 연동
   const {
     favoritePrompts,
     isLoading: isFavoriteLoading,
@@ -76,115 +79,172 @@ export default function MyPromptsPage() {
     setCurrentPage: setFavoritePage,
     reload: reloadFavoritePrompts,
     setFavoritePrompts,
-  } = useFavoritePrompts()
+  } = useFavoritePrompts();
 
+  // 즐겨찾기 개수 API 연동
   const {
     count: favoriteCountFromApi,
     isLoading: isFavoriteCountLoading,
     error: favoriteCountError
-  } = useFavoriteCount()
+  } = useFavoriteCount();
+  const [favoriteCount, setFavoriteCount] = useState(0);
 
-  const {
-    count: totalLikeCount,
-    isLoading: isLikeCountLoading,
-    error: likeCountError,
-    setCount: setTotalLikeCount,
-    reload: reloadLikeCount,
-  } = useMyPromptLikeCount()
+  const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([
+    {action: "생성", actionType: "CREATE", prompt: "API 설계 프롬프트", time: "2시간 전"},
+    {action: "수정", actionType: "EDIT", prompt: "React 테스트 가이드", time: "1일 전"},
+    {action: "즐겨찾기", actionType: "PUBLISH", prompt: "머신러닝 모델 평가", time: "2일 전"},
+    {action: "보관", actionType: "ARCHIVE", prompt: "데이터베이스 최적화", time: "3일 전"},
+  ])
+
+  const [favoriteLoadingId, setFavoriteLoadingId] = useState<string | null>(null);
+  const [promptIdToDelete, setPromptIdToDelete] = useState<string | null>(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const statusLabel: Record<Exclude<StatusType, 'DELETED'>, string> = {
+    DRAFT: "임시저장",
+    PUBLISHED: "게시됨",
+    ARCHIVED: "보관됨",
+  }
+  const statusColor: Record<Exclude<StatusType, 'DELETED'>, string> = {
+    DRAFT: "bg-yellow-600 text-white",
+    PUBLISHED: "bg-green-600 text-white",
+    ARCHIVED: "bg-gray-600 text-white",
+  }
+  const visibilityLabel: Record<VisibilityType, string> = {
+    PUBLIC: "전체 공개",
+    TEAM: "팀 공개",
+    PRIVATE: "비공개",
+  }
+  const visibilityColor: Record<VisibilityType, string> = {
+    PUBLIC: "border-green-500/30 text-green-400",
+    TEAM: "border-blue-500/30 text-blue-400",
+    PRIVATE: "border-gray-500/30 text-gray-400",
+  }
+
+  const {categories} = useCategories()
+
+  const router = useRouter();
+  const {showToast} = useToast();
+
+  const handleEditPrompt = (id: string) => {
+    router.push(`/prompts/${id}/edit?from=my-prompts`);
+  }
+
+  const handleViewPrompt = (id: string) => {
+    router.push(`/prompts/${id}?from=my-prompts`);
+  }
+
+  const handleArchivePrompt = (id: string) => {
+    setMyPrompts((prev) => prev.map((p) => p.id === id ? {...p, status: "ARCHIVED"} : p))
+  }
+
+  const handleDeletePrompt = (id: string) => {
+    setPromptIdToDelete(id);
+    setDeleteError(null);
+  }
+
+  const [statistics, setStatistics] = useState<any>(null);
 
   useEffect(() => {
-    if (activeTab === "my-prompts") {
-      setSearchQuery(debouncedSearch)
-    } else {
-      setFavoriteSearchQuery(debouncedSearch)
+    // useMyPrompts의 statistics를 page.tsx의 statistics로 동기화
+    fetchPromptStatistics().then(setStatistics);
+  }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!promptIdToDelete) return;
+    setIsDeleteLoading(true);
+    setDeleteError(null);
+    // Optimistic UI: 통계값 즉시 감소
+    setStatistics((prev: any) => prev ? {
+      ...prev,
+      totalCount: Math.max(0, prev.totalCount - 1)
+    } : prev);
+    try {
+      await deletePrompt(promptIdToDelete);
+      setMyPrompts((prev) => prev.map((p) => p.id === promptIdToDelete ? {
+        ...p,
+        status: "DELETED"
+      } : p));
+      setPromptIdToDelete(null);
+      showToast({type: "success", message: "프롬프트가 삭제되었습니다."});
+      // 통계 API로 동기화
+      const statsRes = await fetchPromptStatistics();
+      setStatistics(statsRes);
+    } catch (e: any) {
+      setDeleteError(e.message || "프롬프트 삭제 중 오류가 발생했습니다.");
+      showToast({type: "error", message: e.message || "프롬프트 삭제 중 오류가 발생했습니다."});
+    } finally {
+      setIsDeleteLoading(false);
     }
-  }, [debouncedSearch, activeTab, setSearchQuery, setFavoriteSearchQuery])
+  };
 
-  useEffect(() => {
-    if (!isFavoriteCountLoading && !favoriteCountError) {
-      setFavoriteCount(favoriteCountFromApi)
-    }
-  }, [favoriteCountFromApi, isFavoriteCountLoading, favoriteCountError])
+  const handleCancelDelete = () => {
+    setPromptIdToDelete(null);
+    setDeleteError(null);
+  };
 
-  const stats: Stat[] = useMemo(() => [
-    {label: "내 프롬프트", value: myPrompts.length, color: "text-blue-400"},
-    {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
-    {
-      label: "총 조회수",
-      value: myPrompts.reduce((sum, p) => sum + p.viewCount, 0),
-      color: "text-green-400"
-    },
-    {label: "총 좋아요", value: totalLikeCount, color: "text-red-400"},
-  ], [myPrompts, favoriteCount, totalLikeCount])
+  const handleSharePrompt = (id: string) => {
+    showToast({type: "info", message: `프롬프트 공유 기능은 준비 중입니다. (ID: ${id})`});
+  }
 
-  const handleLikeChange = useCallback((promptId: string, liked: boolean) => {
+  const handleToggleFavorite = async (id: string) => {
+    if (favoriteLoadingId) return; // 중복 방지
+    setFavoriteLoadingId(id);
+
+    // 현재 즐겨찾기 상태 확인 (promptUuid와 id 비교)
+    const isFavorite = favoritePrompts.some((favPrompt) => favPrompt.promptUuid === id);
+
+    // Optimistic UI: myPrompts에서 favorite 값 즉시 토글
     setMyPrompts((prev) =>
-        prev.map((p) => p.id === promptId ? {
-          ...p,
-          liked,
-          favoriteCount: p.favoriteCount + (liked ? 1 : -1)
-        } : p)
-    )
-
-    setFavoritePrompts((prev) =>
-        prev.map((p) => p.promptUuid === promptId ? {
-          ...p,
-          liked,
-          favoriteCount: p.favoriteCount + (liked ? 1 : -1)
-        } : p)
-    )
-
-    setTotalLikeCount((prev) => liked ? prev + 1 : Math.max(prev - 1, 0))
-    reloadLikeCount()
-  }, [setMyPrompts, setFavoritePrompts, setTotalLikeCount, reloadLikeCount])
-
-  const handleToggleFavorite = useCallback(async (id: string) => {
-    if (favoriteLoadingId) return
-    setFavoriteLoadingId(id)
-
-    setMyPrompts((prev) =>
-        prev.map((p) => p.id === id ? {...p, favorite: !p.favorite} : p)
-    )
-
-    const isFavorite = favoritePrompts.some((favPrompt) => favPrompt.promptUuid === id)
-    setFavoriteCount((prev) => isFavorite ? prev - 1 : prev + 1)
-    setTotalLikeCount((prev) => isFavorite ? prev - 1 : prev + 1)
+        prev.map((p) =>
+            p.id === id ? {...p, favorite: !p.favorite} : p
+        )
+    );
+    setFavoriteCount((prev) => isFavorite ? prev - 1 : prev + 1);
 
     try {
       if (isFavorite) {
-        await removeFavoritePrompt(id)
+        await removeFavoritePrompt(id);
       } else {
-        await addFavoritePrompt(id)
+        await addFavoritePrompt(id);
       }
-      reloadFavoritePrompts()
-      reloadLikeCount()
-    } catch (e: any) {
+      // 즐겨찾기 목록 새로고침 및 myPrompts 동기화
+      reloadFavoritePrompts();
       setMyPrompts((prev) =>
-          prev.map((p) => p.id === id ? {...p, favorite: !p.favorite} : p)
-      )
-      setFavoriteCount((prev) => isFavorite ? prev + 1 : prev - 1)
-      setTotalLikeCount((prev) => isFavorite ? prev + 1 : prev - 1)
-      alert(e.message || "즐겨찾기 처리 중 오류가 발생했습니다.")
+          prev.map((p) =>
+              p.id === id ? {...p, favorite: !isFavorite} : p
+          )
+      );
+    } catch (e: any) {
+      // 실패 시 롤백
+      setMyPrompts((prev) =>
+          prev.map((p) =>
+              p.id === id ? {...p, favorite: isFavorite} : p
+          )
+      );
+      setFavoriteCount((prev) => isFavorite ? prev + 1 : prev - 1);
+      showToast({type: "error", message: e.message || "즐겨찾기 처리 중 오류가 발생했습니다."});
     } finally {
-      setFavoriteLoadingId(null)
+      setFavoriteLoadingId(null);
     }
-  }, [favoriteLoadingId, favoritePrompts, setMyPrompts, setFavoriteCount, setTotalLikeCount, reloadFavoritePrompts, reloadLikeCount])
+  };
 
-  const handleCopyPrompt = useCallback((id: string) => {
+  const handleCopyPrompt = (id: string) => {
     const promptToCopy = myPrompts.find((prompt) => prompt.id === id)
     if (promptToCopy) {
       navigator.clipboard.writeText(`Title: ${promptToCopy.title}\nDescription: ${promptToCopy.description}`)
-      alert("프롬프트가 클립보드에 복사되었습니다!")
+      showToast({type: "success", message: "프롬프트가 클립보드에 복사되었습니다!"});
     }
-  }, [myPrompts])
+  }
 
-  const handleStatusFilterChange = useCallback((status: string, checked: boolean) => {
+  const handleStatusFilterChange = (status: StatusType, checked: boolean) => {
     setStatusFilter((prev) => ({...prev, [status]: checked}))
-  }, [setStatusFilter])
+  }
 
-  const handleVisibilityFilterChange = useCallback((visibility: string, checked: boolean) => {
+  const handleVisibilityFilterChange = (visibility: VisibilityType, checked: boolean) => {
     setVisibilityFilter((prev) => ({...prev, [visibility]: checked}))
-  }, [setVisibilityFilter])
+  }
 
   const getActionIcon = (actionType: ActivityType) => {
     switch (actionType) {
@@ -216,186 +276,87 @@ export default function MyPromptsPage() {
     }
   }
 
-  const renderMyPromptsContent = useCallback(() => (
-      <TabsContent value="my-prompts" className="space-y-4">
-        {isMyPromptsLoading ? (
-            Array.from({length: 3}).map((_, idx) => (
-                <Card key={idx} className="bg-white/10 border-white/20 animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="h-6 bg-white/20 rounded w-1/3 mb-2"/>
-                    <div className="h-4 bg-white/10 rounded w-2/3 mb-3"/>
-                    <div className="h-4 bg-white/10 rounded w-1/2 mb-2"/>
-                    <div className="h-4 bg-white/10 rounded w-1/4"/>
-                  </CardContent>
-                </Card>
-            ))
-        ) : myPrompts.length === 0 ? (
-            <div className="text-white/60 text-center py-8">프롬프트가 없습니다.</div>
-        ) : (
-            <>
-              {myPrompts.map((prompt) => (
-                  <PromptCard
-                      key={prompt.id}
-                      prompt={prompt}
-                      statusLabel={STATUS_CONFIG.label}
-                      statusColor={STATUS_CONFIG.color}
-                      visibilityLabel={VISIBILITY_CONFIG.label}
-                      visibilityColor={VISIBILITY_CONFIG.color}
-                      onEdit={(id) => alert(`프롬프트 수정: ${id}`)}
-                      onDelete={(id) => setMyPrompts((prev) => prev.map((p) => p.id === id ? {
-                        ...p,
-                        status: "DELETED"
-                      } : p))}
-                      onShare={(id) => alert(`프롬프트 공유: ${id}`)}
-                      onCopy={handleCopyPrompt}
-                      onFavoriteSuccess={handleToggleFavorite}
-                      onLikeChange={(liked) => handleLikeChange(prompt.id, liked)}
-                  />
-              ))}
-              {totalPages > 1 && (
-                  <div className="flex justify-center mt-6 gap-2">
-                    {Array.from({length: totalPages}).map((_, idx) => (
-                        <button
-                            key={idx}
-                            className={`px-3 py-1 rounded text-sm font-medium ${
-                                currentPage === idx
-                                    ? "bg-purple-600 text-white"
-                                    : "bg-white/10 text-white/60 hover:bg-white/20"
-                            }`}
-                            onClick={() => setCurrentPage(idx)}
-                            aria-label={`페이지 ${idx + 1}`}
-                            tabIndex={0}
-                        >
-                          {idx + 1}
-                        </button>
-                    ))}
-                  </div>
-              )}
-            </>
-        )}
-      </TabsContent>
-  ), [
-    isMyPromptsLoading,
-    myPrompts,
-    totalPages,
-    currentPage,
-    handleCopyPrompt,
-    handleToggleFavorite,
-    handleLikeChange,
-    setCurrentPage
-  ])
+  // 통계 카드 4개로 고정 (총 좋아요는 myPrompts.reduce로 계산)
+  const stats = [
+    {label: "내 프롬프트", value: statistics?.totalCount ?? 0, color: "text-blue-400"},
+    {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
+    {
+      label: "총 조회수",
+      value: myPrompts.reduce((sum, p) => sum + p.viewCount, 0),
+      color: "text-green-400"
+    },
+    {
+      label: "총 좋아요",
+      value: myPrompts.reduce((sum, p) => sum + p.favoriteCount, 0),
+      color: "text-red-400"
+    },
+  ];
 
-  const renderFavoriteContent = useCallback(() => (
-      <TabsContent value="favorites" className="space-y-4">
-        {isFavoriteLoading ? (
-            Array.from({length: 3}).map((_, idx) => (
-                <Card key={idx} className="bg-white/10 border-white/20 animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="h-6 bg-white/20 rounded w-1/3 mb-2"/>
-                    <div className="h-4 bg-white/10 rounded w-2/3 mb-3"/>
-                    <div className="h-4 bg-white/10 rounded w-1/2 mb-2"/>
-                    <div className="h-4 bg-white/10 rounded w-1/4"/>
-                  </CardContent>
-                </Card>
-            ))
-        ) : favoritePrompts.length === 0 ? (
-            <div className="text-white/60 text-center py-8">즐겨찾기한 프롬프트가 없습니다.</div>
-        ) : (
-            <>
-              {favoritePrompts.map((prompt) => (
-                  <FavoritePromptCard
-                      key={prompt.favoriteId}
-                      prompt={prompt}
-                      onRemoveFavorite={async (id) => {
-                        setFavoritePrompts((prev) => prev.filter((p) => p.promptUuid !== id))
-                        setFavoriteCount((prev) => (prev > 0 ? prev - 1 : 0))
-                        setMyPrompts((prev) => prev.map((p) => p.id === id ? {
-                          ...p,
-                          favorite: false
-                        } : p))
-                        const isMine = myPrompts.some((p) => p.id === prompt.promptUuid)
-                        if (isMine) {
-                          setTotalLikeCount((prev) => (prev > 0 ? prev - 1 : 0))
-                          reloadLikeCount()
-                        }
-                        reloadFavoritePrompts()
-                      }}
-                      onLikeChange={(liked) => handleLikeChange(prompt.promptUuid, liked)}
-                      onCopy={(id) => {
-                        const p = favoritePrompts.find((fp) => fp.promptUuid === id)
-                        if (p) {
-                          navigator.clipboard.writeText(`Title: ${p.title}\nDescription: ${p.description}`)
-                          alert("프롬프트가 클립보드에 복사되었습니다!")
-                        }
-                      }}
-                  />
-              ))}
-              {favoriteTotalPages > 1 && (
-                  <div className="flex justify-center mt-6 gap-2">
-                    {Array.from({length: favoriteTotalPages}).map((_, idx) => (
-                        <button
-                            key={idx}
-                            className={`px-3 py-1 rounded text-sm font-medium ${
-                                favoritePage === idx
-                                    ? "bg-purple-600 text-white"
-                                    : "bg-white/10 text-white/60 hover:bg-white/20"
-                            }`}
-                            onClick={() => setFavoritePage(idx)}
-                            aria-label={`페이지 ${idx + 1}`}
-                            tabIndex={0}
-                        >
-                          {idx + 1}
-                        </button>
-                    ))}
-                  </div>
-              )}
-            </>
-        )}
-        {favoriteError && (
-            <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
-              {favoriteError}
-            </div>
-        )}
-      </TabsContent>
-  ), [
-    isFavoriteLoading,
-    favoritePrompts,
-    favoriteTotalPages,
-    favoritePage,
-    favoriteError,
-    handleLikeChange,
-    myPrompts,
-    setFavoritePrompts,
-    setFavoriteCount,
-    setMyPrompts,
-    setTotalLikeCount,
-    reloadLikeCount,
-    reloadFavoritePrompts,
-    setFavoritePage
-  ])
+  // statusFilter에서 DELETED 제외
+  const filteredStatusFilter = Object.fromEntries(
+      Object.entries(statusFilter).filter(([k]) => k !== 'DELETED')
+  ) as Record<Exclude<StatusType, 'DELETED'>, boolean>;
+
+  const {
+    count: totalLikeCount,
+    isLoading: isLikeCountLoading,
+    error: likeCountError,
+    setCount: setTotalLikeCount,
+    reload: reloadLikeCount,
+  } = useMyPromptLikeCount()
+
+  const [searchInput, setSearchInput] = useState("")
+  const debouncedSearch = useDebounce(searchInput, 300)
+
+  useEffect(() => {
+    if (activeTab === "my-prompts") {
+      setSearchQuery(debouncedSearch)
+    } else {
+      setFavoriteSearchQuery(debouncedSearch)
+    }
+  }, [debouncedSearch, activeTab, setSearchQuery, setFavoriteSearchQuery])
+
+  useEffect(() => {
+    if (!isFavoriteCountLoading && !favoriteCountError) {
+      setFavoriteCount(favoriteCountFromApi)
+    }
+  }, [favoriteCountFromApi, isFavoriteCountLoading, favoriteCountError])
+
+  const handleLikeChange = useCallback((promptId: string, liked: boolean, likeCount: number) => {
+    const safeLikeCount = typeof likeCount === 'number' && !isNaN(likeCount) ? likeCount : 0;
+    setMyPrompts((prev) =>
+        prev.map((p) => p.id === promptId ? {...p, liked, favoriteCount: safeLikeCount} : p)
+    );
+    setFavoritePrompts((prev) =>
+        prev.map((p) =>
+            (p.promptUuid === promptId || p.id === promptId)
+                ? {...p, liked, favoriteCount: safeLikeCount}
+                : p
+        )
+    );
+    setTotalLikeCount((prev) => liked ? prev + 1 : Math.max(prev - 1, 0));
+    reloadLikeCount();
+  }, [setMyPrompts, setFavoritePrompts, setTotalLikeCount, reloadLikeCount]);
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        {/* Header 삭제됨 - 공통 Header만 사용 */}
         <div className="container mx-auto px-4 py-8">
+          {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">내 프롬프트</h1>
             <p className="text-white/70">내가 작성하고 즐겨찾기한 프롬프트를 관리하세요</p>
           </div>
 
+          {/* Stats */}
           <PromptStats stats={stats}/>
 
-          {likeCountError && (
-              <div className="mb-2 text-sm text-red-400 text-center">
-                {likeCountError}
-              </div>
-          )}
-
+          {/* 에러 메시지 */}
           {myPromptsError && (
               <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
                 {myPromptsError}
               </div>
           )}
-
           {favoriteCountError && (
               <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
                 {favoriteCountError}
@@ -403,13 +364,10 @@ export default function MyPromptsPage() {
           )}
 
           <div className="grid lg:grid-cols-4 gap-8">
+            {/* Main Content */}
             <div className="lg:col-span-3">
-              <Tabs
-                  defaultValue="my-prompts"
-                  className="space-y-6"
-                  value={activeTab}
-                  onValueChange={setActiveTab}
-              >
+              <Tabs defaultValue="my-prompts" className="space-y-6" value={activeTab}
+                    onValueChange={setActiveTab}>
                 <TabsList className="bg-white/10 backdrop-blur-sm border-white/20">
                   <TabsTrigger value="my-prompts" className="data-[state=active]:bg-white/20">
                     내 프롬프트 ({myPrompts.length})
@@ -419,23 +377,165 @@ export default function MyPromptsPage() {
                   </TabsTrigger>
                 </TabsList>
 
+                {/* Search */}
                 <div className="relative">
                   <Search
                       className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50"/>
                   <Input
                       placeholder="프롬프트 제목, 설명, 태그로 검색..."
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
+                      value={activeTab === "my-prompts" ? searchQuery : favoriteSearchQuery}
+                      onChange={(e) => {
+                        if (activeTab === "my-prompts") setSearchQuery(e.target.value)
+                        else setFavoriteSearchQuery(e.target.value)
+                      }}
                       className="pl-10 bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50"
                   />
                 </div>
 
-                {renderMyPromptsContent()}
-                {renderFavoriteContent()}
+                <TabsContent value="my-prompts" className="space-y-4">
+                  {isMyPromptsLoading ? (
+                      Array.from({length: 3}).map((_, idx) => (
+                          <Card key={idx} className="bg-white/10 border-white/20 animate-pulse">
+                            <CardContent className="p-6">
+                              <div className="h-6 bg-white/20 rounded w-1/3 mb-2"/>
+                              <div className="h-4 bg-white/10 rounded w-2/3 mb-3"/>
+                              <div className="h-4 bg-white/10 rounded w-1/2 mb-2"/>
+                              <div className="h-4 bg-white/10 rounded w-1/4"/>
+                            </CardContent>
+                          </Card>
+                      ))
+                  ) : myPrompts.length === 0 ? (
+                      <div className="text-white/60 text-center py-8">프롬프트가 없습니다.</div>
+                  ) : (
+                      myPrompts.map((prompt) => (
+                          <PromptCard
+                              key={prompt.id}
+                              prompt={prompt}
+                              statusLabel={statusLabel}
+                              statusColor={statusColor}
+                              visibilityLabel={visibilityLabel}
+                              visibilityColor={visibilityColor}
+                              onEdit={handleEditPrompt}
+                              onDelete={handleDeletePrompt}
+                              onShare={handleSharePrompt}
+                              onCopy={handleCopyPrompt}
+                              onFavoriteSuccess={(id, isFavorite) => {
+                                setMyPrompts((prev) => prev.map((p) => p.id === id ? {
+                                  ...p,
+                                  favorite: isFavorite
+                                } : p));
+                                setFavoriteCount((prev) => isFavorite ? prev + 1 : Math.max(prev - 1, 0));
+                                reloadFavoritePrompts();
+                              }}
+                              onView={handleViewPrompt}
+                              onLikeChange={(liked, likeCount) => handleLikeChange(prompt.id, liked, likeCount)}
+                          />
+                      ))
+                  )}
+                  {/* 페이지네이션 */}
+                  {totalPages > 1 && (
+                      <div className="flex justify-center mt-6 gap-2">
+                        {Array.from({length: totalPages}).map((_, idx) => (
+                            <button
+                                key={idx}
+                                className={`px-3 py-1 rounded text-sm font-medium ${currentPage === idx ? "bg-purple-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
+                                onClick={() => setCurrentPage(idx)}
+                                aria-label={`페이지 ${idx + 1}`}
+                                tabIndex={0}
+                            >
+                              {idx + 1}
+                            </button>
+                        ))}
+                      </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="favorites" className="space-y-4">
+                  {isFavoriteLoading ? (
+                      Array.from({length: 3}).map((_, idx) => (
+                          <Card key={idx} className="bg-white/10 border-white/20 animate-pulse">
+                            <CardContent className="p-6">
+                              <div className="h-6 bg-white/20 rounded w-1/3 mb-2"/>
+                              <div className="h-4 bg-white/10 rounded w-2/3 mb-3"/>
+                              <div className="h-4 bg-white/10 rounded w-1/2 mb-2"/>
+                              <div className="h-4 bg-white/10 rounded w-1/4"/>
+                            </CardContent>
+                          </Card>
+                      ))
+                  ) : favoritePrompts.length === 0 ? (
+                      <div className="text-white/60 text-center py-8">즐겨찾기한 프롬프트가 없습니다.</div>
+                  ) : (
+                      favoritePrompts.map((prompt) => {
+                        const matchedPrompt = myPrompts.find((p) => p.category?.id === prompt.categoryId)
+                        const category = matchedPrompt?.category || {
+                          id: prompt.categoryId,
+                          name: "",
+                          displayName: "",
+                          description: "",
+                          parentCategoryId: null,
+                          parentCategoryName: null,
+                          isSystem: false,
+                          createdAt: "",
+                          updatedAt: ""
+                        }
+                        return (
+                            <FavoritePromptCard
+                                key={prompt.favoriteId}
+                                prompt={{
+                                  ...prompt,
+                                  id: prompt.promptUuid,
+                                  category,
+                                  author: prompt.createdByName,
+                                }}
+                                onRemoveFavorite={(id) => {
+                                  setFavoritePrompts((prev) => prev.filter((p) => p.promptUuid !== id));
+                                  setFavoriteCount((prev) => (prev > 0 ? prev - 1 : 0));
+                                  setMyPrompts((prev) => prev.map((p) => p.id === id ? {
+                                    ...p,
+                                    favorite: false
+                                  } : p));
+                                  reloadFavoritePrompts();
+                                }}
+                                onCopy={(id) => {
+                                  const p = favoritePrompts.find((fp) => fp.promptUuid === id);
+                                  if (p) {
+                                    navigator.clipboard.writeText(`Title: ${p.title}\nDescription: ${p.description}`);
+                                  }
+                                }}
+                                onLikeChange={(liked, likeCount) => handleLikeChange(prompt.promptUuid, liked, likeCount)}
+                            />
+                        )
+                      })
+                  )}
+                  {/* 페이지네이션 */}
+                  {favoriteTotalPages > 1 && (
+                      <div className="flex justify-center mt-6 gap-2">
+                        {Array.from({length: favoriteTotalPages}).map((_, idx) => (
+                            <button
+                                key={idx}
+                                className={`px-3 py-1 rounded text-sm font-medium ${favoritePage === idx ? "bg-purple-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
+                                onClick={() => setFavoritePage(idx)}
+                                aria-label={`페이지 ${idx + 1}`}
+                                tabIndex={0}
+                            >
+                              {idx + 1}
+                            </button>
+                        ))}
+                      </div>
+                  )}
+                  {/* 에러 메시지 */}
+                  {favoriteError && (
+                      <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
+                        {favoriteError}
+                      </div>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
 
+            {/* Sidebar */}
             <div className="space-y-6">
+              {/* Quick Actions */}
               <PromptQuickActions
                   onNewPrompt={() => {
                   }}
@@ -445,19 +545,21 @@ export default function MyPromptsPage() {
                   }}
               />
 
+              {/* Recent Activity */}
               <PromptActivity
                   recentActivity={recentActivity}
                   getActionIcon={getActionIcon}
                   getActionColor={getActionColor}
               />
 
+              {/* Filter Options */}
               <PromptFilters
-                  statusLabel={STATUS_CONFIG.label}
-                  statusColor={STATUS_CONFIG.color}
-                  statusFilter={statusFilter}
+                  statusLabel={statusLabel}
+                  statusColor={statusColor}
+                  statusFilter={filteredStatusFilter}
                   onStatusChange={handleStatusFilterChange}
-                  visibilityLabel={VISIBILITY_CONFIG.label}
-                  visibilityColor={VISIBILITY_CONFIG.color}
+                  visibilityLabel={visibilityLabel}
+                  visibilityColor={visibilityColor}
                   visibilityFilter={visibilityFilter}
                   onVisibilityChange={handleVisibilityFilterChange}
               />

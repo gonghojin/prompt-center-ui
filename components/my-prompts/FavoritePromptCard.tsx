@@ -15,7 +15,7 @@ interface FavoritePromptCardProps {
   prompt: FavoritePrompt;
   onRemoveFavorite: (id: string) => void;
   onCopy: (id: string) => void;
-  onLikeChange?: (liked: boolean) => void;
+  onLikeChange?: (liked: boolean, likeCount: number) => void;
 }
 
 export const FavoritePromptCard: FC<FavoritePromptCardProps> = ({

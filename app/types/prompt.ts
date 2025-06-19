@@ -39,16 +39,26 @@ export interface Prompt {
   liked?: boolean;
 }
 
-export type FavoritePrompt = {
-  favoriteId: string;
+export interface FavoritePrompt {
+  favoriteId: number;
   promptUuid: string;
+  id?: string;
   title: string;
   description: string;
-  categoryId: string;
-  createdByName: string;
-  favoriteCount: number;
-  viewCount: number;
-  promptUpdatedAt: string;
   tags: string[];
+  createdById: number;
+  createdByName: string;
+  categoryId: number;
+  visibility: "PUBLIC" | "TEAM" | "PRIVATE";
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED";
+  promptCreatedAt: string;
+  promptUpdatedAt: string;
+  favoriteCreatedAt: string;
+  viewCount: number;
+  favoriteCount: number;
+  category?: Category;
+  author?: string;
+  icon?: JSX.Element;
+  favorite?: boolean;
   liked?: boolean;
-}; 
+} 

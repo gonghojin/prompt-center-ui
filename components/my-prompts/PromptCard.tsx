@@ -9,6 +9,7 @@ import {getRelativeTime} from "@/app/lib/getRelativeTime";
 import type {Prompt} from "@/app/types/prompt";
 import {categoryIconMap} from "@/lib/categoryIconMap";
 import {FavoriteButton} from "@components/prompts/FavoriteButton";
+import {LikeButton} from "@components/prompts/LikeButton";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -22,6 +23,7 @@ interface PromptCardProps {
   onCopy: (id: string) => void;
   onFavoriteSuccess?: (id: string, isFavorite: boolean) => void;
   onView?: (id: string) => void;
+  onLikeChange?: (liked: boolean, likeCount: number) => void;
 }
 
 export const PromptCard: FC<PromptCardProps> = ({
@@ -35,8 +37,8 @@ export const PromptCard: FC<PromptCardProps> = ({
                                                   onShare,
                                                   onCopy,
                                                   onFavoriteSuccess,
-                                                  onLikeChange,
                                                   onView,
+                                                  onLikeChange,
                                                 }) => {
   const icon = prompt.icon || categoryIconMap[prompt.category.name] || categoryIconMap.default;
   return (
@@ -73,11 +75,9 @@ export const PromptCard: FC<PromptCardProps> = ({
               <div className="flex items-center gap-4 text-xs text-white/60">
                 <LikeButton
                     promptId={prompt.id}
-                    initialLiked={prompt.liked ?? false}
+                    initialLiked={!!prompt.liked}
                     initialLikeCount={prompt.favoriteCount ?? 0}
-                    onChange={(liked) => {
-                      if (onLikeChange) onLikeChange(liked);
-                    }}
+                    onChange={(liked, likeCount) => onLikeChange && onLikeChange(liked, likeCount)}
                 />
                 <span className="flex items-center gap-1">
                   <Eye className="h-3 w-3"/>

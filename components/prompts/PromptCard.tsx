@@ -8,11 +8,11 @@ import {Prompt} from "@/app/types/prompt";
 import {PromptTags} from "./PromptTags";
 import type {FC} from "react";
 import {FavoriteButton} from "./FavoriteButton";
-import {LikeButton} from "./LikeButton";
+import {LikeButton} from "@components/prompts/LikeButton";
 
 interface PromptCardProps {
   prompt: Prompt;
-  onLike: (id: string) => void;
+  onLike: (id: string, liked: boolean, likeCount: number) => void;
   onShare: (id: string) => void;
   onFavorite?: (id: string) => Promise<void>;
   onFavoriteSuccess?: (isFavorite: boolean) => void;
@@ -77,9 +77,11 @@ export const PromptCard: FC<PromptCardProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-xs text-white/60">
           <LikeButton
+              key={prompt.id}
               promptId={prompt.id}
-              initialLiked={prompt.liked ?? false}
+              initialLiked={!!prompt.liked}
               initialLikeCount={prompt.favoriteCount ?? 0}
+              onChange={(liked, likeCount) => onLike && onLike(prompt.id, liked, likeCount)}
           />
           <span className="flex items-center gap-1">
             <Eye className="h-3 w-3" />
