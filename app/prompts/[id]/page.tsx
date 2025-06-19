@@ -25,7 +25,6 @@ import ReactMarkdown from "react-markdown"
 import {fetchWithAuth} from "@/app/api/fetchWithAuth"
 import {FavoriteButton} from "@components/prompts/FavoriteButton"
 import {LikeButton} from "@components/prompts/LikeButton"
-import Link from "next/link"
 import {useToast} from "@/components/ui/useToast"
 
 interface ApiPrompt {
@@ -278,7 +277,7 @@ const PromptDetailPage = () => {
           <div className="flex items-center gap-4 text-xs text-white/60">
             <LikeButton
                 promptId={prompt.id}
-                initialLiked={prompt.liked}
+                initialLiked={prompt.liked ?? false}
                 initialLikeCount={prompt.favoriteCount}
                 onChange={(newLiked, newCount) => {
                   setLiked(newLiked);
@@ -303,7 +302,7 @@ const PromptDetailPage = () => {
             </Button>
             <FavoriteButton
                 promptId={prompt.id}
-                initialFavorite={prompt.favorite}
+                initialFavorite={prompt.favorite ?? false}
                 onSuccess={(isFavorite) => showToast({
                   type: isFavorite ? "success" : "info",
                   message: isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기에서 제거되었습니다."
