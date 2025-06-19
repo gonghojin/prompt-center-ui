@@ -3,12 +3,13 @@ import {Card, CardContent} from "@components/ui/card";
 import {Button} from "@components/ui/button";
 import {Badge} from "@components/ui/badge";
 import Link from "next/link";
-import {Clock, Copy, Edit, Eye, Heart, Share2, Trash2} from "lucide-react";
+import {Clock, Copy, Edit, Eye, Share2, Trash2} from "lucide-react";
 import {CategoryBadge} from "@components/category/CategoryBadge";
 import {getRelativeTime} from "@/app/lib/getRelativeTime";
 import type {Prompt} from "@/app/types/prompt";
 import {categoryIconMap} from "@/lib/categoryIconMap";
 import {FavoriteButton} from "@components/prompts/FavoriteButton";
+import {LikeButton} from "@components/prompts/LikeButton";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -22,6 +23,7 @@ interface PromptCardProps {
   onCopy: (id: string) => void;
   onFavoriteSuccess?: (id: string, isFavorite: boolean) => void;
   onView?: (id: string) => void;
+  onLikeChange?: (liked: boolean, likeCount: number) => void;
 }
 
 export const PromptCard: FC<PromptCardProps> = ({
@@ -36,6 +38,7 @@ export const PromptCard: FC<PromptCardProps> = ({
                                                   onCopy,
                                                   onFavoriteSuccess,
                                                   onView,
+                                                  onLikeChange,
                                                 }) => {
   const icon = prompt.icon || categoryIconMap[prompt.category.name] || categoryIconMap.default;
   return (
@@ -70,18 +73,20 @@ export const PromptCard: FC<PromptCardProps> = ({
                 ))}
               </div>
               <div className="flex items-center gap-4 text-xs text-white/60">
-              <span className="flex items-center gap-1">
-                <Heart className="h-3 w-3"/>
-                {prompt.favoriteCount}
-              </span>
+                <LikeButton
+                    promptId={prompt.id}
+                    initialLiked={!!prompt.liked}
+                    initialLikeCount={prompt.favoriteCount ?? 0}
+                    onChange={(liked, likeCount) => onLikeChange && onLikeChange(liked, likeCount)}
+                />
                 <span className="flex items-center gap-1">
-                <Eye className="h-3 w-3"/>
+                  <Eye className="h-3 w-3"/>
                   {prompt.viewCount}
-              </span>
+                </span>
                 <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3"/>
+                  <Clock className="h-3 w-3"/>
                   {getRelativeTime(prompt.updatedAt)}
-              </span>
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-2 ml-4">

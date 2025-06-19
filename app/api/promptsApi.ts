@@ -1,5 +1,4 @@
-import type { ApiPrompt } from "@/app/types/prompt";
-import { fetchWithAuth } from "@/app/api/fetchWithAuth";
+import {fetchWithAuth} from "@/app/api/fetchWithAuth";
 
 export type PromptCreatePayload = {
   title: string;
@@ -45,6 +44,30 @@ export const createPrompt = async (data: PromptCreatePayload) => {
   return res.json();
 };
 
+// 좋아요 상태/카운트 조회
+export const getPromptLikeStatus = async (promptId: string): Promise<{
+  liked: boolean;
+  likeCount: number
+}> => {
+  const res = await fetchWithAuth(`/api/v1/prompts/${promptId}/like-status`);
+  if (!res.ok) throw new Error("좋아요 정보를 불러오지 못했습니다.");
+  return res.json();
+};
+
+// 좋아요 추가
+export const likePrompt = async (promptId: string): Promise<{ likeCount: number }> => {
+  const res = await fetchWithAuth(`/api/v1/prompts/${promptId}/like`, {method: "POST"});
+  if (!res.ok) throw new Error("좋아요 추가 실패");
+  return res.json();
+};
+
+// 좋아요 취소
+export const unlikePrompt = async (promptId: string): Promise<{ likeCount: number }> => {
+  const res = await fetchWithAuth(`/api/v1/prompts/${promptId}/like`, {method: "DELETE"});
+  if (!res.ok) throw new Error("좋아요 취소 실패");
+  return res.json();
+};
+
 export const deletePrompt = async (id: string) => {
   const res = await fetchWithAuth(`/api/v1/prompts/${id}`, {
     method: "DELETE",
@@ -59,4 +82,4 @@ export const deletePrompt = async (id: string) => {
     throw new Error(errorMsg);
   }
   return res.json();
-}; 
+};

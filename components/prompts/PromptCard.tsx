@@ -1,17 +1,18 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@components/ui/card";
 import {Button} from "@components/ui/button";
 import Link from "next/link";
-import {Clock, Eye, Heart, Share2, User} from "lucide-react";
+import {Clock, Eye, Share2, User} from "lucide-react";
 import {CategoryBadge} from "@components/category/CategoryBadge";
 import ReactMarkdown from "react-markdown";
 import {Prompt} from "@/app/types/prompt";
 import {PromptTags} from "./PromptTags";
 import type {FC} from "react";
 import {FavoriteButton} from "./FavoriteButton";
+import {LikeButton} from "@components/prompts/LikeButton";
 
 interface PromptCardProps {
   prompt: Prompt;
-  onLike: (id: string) => void;
+  onLike: (id: string, liked: boolean, likeCount: number) => void;
   onShare: (id: string) => void;
   onFavorite?: (id: string) => Promise<void>;
   onFavoriteSuccess?: (isFavorite: boolean) => void;
@@ -75,16 +76,13 @@ export const PromptCard: FC<PromptCardProps> = ({
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-xs text-white/60">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white/70 hover:text-white p-1"
-            onClick={() => onLike(prompt.id)}
-            aria-label="좋아요"
-          >
-            <Heart className="h-3 w-3" />
-            {prompt.favoriteCount}
-          </Button>
+          <LikeButton
+              key={prompt.id}
+              promptId={prompt.id}
+              initialLiked={!!prompt.liked}
+              initialLikeCount={prompt.favoriteCount ?? 0}
+              onChange={(liked, likeCount) => onLike && onLike(prompt.id, liked, likeCount)}
+          />
           <span className="flex items-center gap-1">
             <Eye className="h-3 w-3" />
             {prompt.viewCount}

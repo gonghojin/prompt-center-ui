@@ -59,6 +59,7 @@ export const usePrompts = () => {
             icon,
             favorite: item.favorite,
             isPublic: item.public,
+            liked: item.liked
           };
         });
         setPrompts(mapped);
@@ -72,8 +73,12 @@ export const usePrompts = () => {
     if (categories.length > 0) fetchPrompts();
   }, [categories, searchQuery, selectedCategory, sortBy, currentPage]);
 
-  const handleLike = (id: string) => {
-    setPrompts((prev) => prev.map((p) => p.id === id ? { ...p, favoriteCount: p.favoriteCount + 1 } : p));
+  const handleLike = (id: string, liked: boolean, likeCount: number) => {
+    setPrompts((prev) => prev.map((p) => p.id === id ? {
+      ...p,
+      liked,
+      favoriteCount: likeCount
+    } : p));
   };
   const handleFavorite = async (id: string) => {
     const prompt = prompts.find((p) => p.id === id);

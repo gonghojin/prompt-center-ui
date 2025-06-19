@@ -4,7 +4,7 @@ import {Card, CardContent} from "@components/ui/card"
 import {Input} from "@components/ui/input"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@components/ui/tabs"
 import {Archive, Clock, Edit, Plus, Search, Share2,} from "lucide-react"
-import {useEffect, useState} from "react"
+import {useCallback, useEffect, useState} from "react"
 import {useCategories} from "@/app/hooks/useCategories"
 import type {Category} from "@/app/types/category"
 import {PromptCard} from "@components/my-prompts/PromptCard"
@@ -13,14 +13,15 @@ import {PromptStats} from "@components/my-prompts/PromptStats"
 import {PromptFilters} from "@components/my-prompts/PromptFilters"
 import {PromptActivity} from "@components/my-prompts/PromptActivity"
 import {PromptQuickActions} from "@components/my-prompts/PromptQuickActions"
-import {useMyPrompts} from "@/app/hooks/useMyPrompts"
+import {fetchPromptStatistics, useMyPrompts} from "@/app/hooks/useMyPrompts"
 import {useFavoritePrompts} from "@/app/hooks/useFavoritePrompts"
 import {useFavoriteCount} from "@/app/hooks/useFavoriteCount"
 import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
 import {deletePrompt} from "@/app/api/promptsApi"
 import {useRouter} from "next/navigation";
-import {fetchPromptStatistics} from "@/app/hooks/useMyPrompts"
 import {useToast} from "@/components/ui/useToast";
+import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
+import {useDebounce} from "@/app/hooks/useDebounce"
 
 type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
 type VisibilityType = 'PUBLIC' | 'TEAM' | 'PRIVATE';
@@ -87,12 +88,6 @@ export default function MyPromptsPage() {
     error: favoriteCountError
   } = useFavoriteCount();
   const [favoriteCount, setFavoriteCount] = useState(0);
-
-  useEffect(() => {
-    if (!isFavoriteCountLoading && !favoriteCountError) {
-      setFavoriteCount(favoriteCountFromApi);
-    }
-  }, [favoriteCountFromApi, isFavoriteCountLoading, favoriteCountError]);
 
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([
     {action: "생성", actionType: "CREATE", prompt: "API 설계 프롬프트", time: "2시간 전"},
@@ -281,7 +276,7 @@ export default function MyPromptsPage() {
     }
   }
 
-  // 통계 카드 4개로 고정
+  // 통계 카드 4개로 고정 (총 좋아요는 myPrompts.reduce로 계산)
   const stats = [
     {label: "내 프롬프트", value: statistics?.totalCount ?? 0, color: "text-blue-400"},
     {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
@@ -301,6 +296,47 @@ export default function MyPromptsPage() {
   const filteredStatusFilter = Object.fromEntries(
       Object.entries(statusFilter).filter(([k]) => k !== 'DELETED')
   ) as Record<Exclude<StatusType, 'DELETED'>, boolean>;
+
+  const {
+    count: totalLikeCount,
+    isLoading: isLikeCountLoading,
+    error: likeCountError,
+    setCount: setTotalLikeCount,
+    reload: reloadLikeCount,
+  } = useMyPromptLikeCount()
+
+  const [searchInput, setSearchInput] = useState("")
+  const debouncedSearch = useDebounce(searchInput, 300)
+
+  useEffect(() => {
+    if (activeTab === "my-prompts") {
+      setSearchQuery(debouncedSearch)
+    } else {
+      setFavoriteSearchQuery(debouncedSearch)
+    }
+  }, [debouncedSearch, activeTab, setSearchQuery, setFavoriteSearchQuery])
+
+  useEffect(() => {
+    if (!isFavoriteCountLoading && !favoriteCountError) {
+      setFavoriteCount(favoriteCountFromApi)
+    }
+  }, [favoriteCountFromApi, isFavoriteCountLoading, favoriteCountError])
+
+  const handleLikeChange = useCallback((promptId: string, liked: boolean, likeCount: number) => {
+    const safeLikeCount = typeof likeCount === 'number' && !isNaN(likeCount) ? likeCount : 0;
+    setMyPrompts((prev) =>
+        prev.map((p) => p.id === promptId ? {...p, liked, favoriteCount: safeLikeCount} : p)
+    );
+    setFavoritePrompts((prev) =>
+        prev.map((p) =>
+            (p.promptUuid === promptId || p.id === promptId)
+                ? {...p, liked, favoriteCount: safeLikeCount}
+                : p
+        )
+    );
+    setTotalLikeCount((prev) => liked ? prev + 1 : Math.max(prev - 1, 0));
+    reloadLikeCount();
+  }, [setMyPrompts, setFavoritePrompts, setTotalLikeCount, reloadLikeCount]);
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -392,6 +428,7 @@ export default function MyPromptsPage() {
                                 reloadFavoritePrompts();
                               }}
                               onView={handleViewPrompt}
+                              onLikeChange={(liked, likeCount) => handleLikeChange(prompt.id, liked, likeCount)}
                           />
                       ))
                   )}
@@ -446,24 +483,26 @@ export default function MyPromptsPage() {
                                 key={prompt.favoriteId}
                                 prompt={{
                                   ...prompt,
+                                  id: prompt.promptUuid,
                                   category,
                                   author: prompt.createdByName,
                                 }}
-                          onRemoveFavorite={(id) => {
-                            setFavoritePrompts((prev) => prev.filter((p) => p.promptUuid !== id));
-                            setFavoriteCount((prev) => (prev > 0 ? prev - 1 : 0));
-                            setMyPrompts((prev) => prev.map((p) => p.id === id ? {
-                              ...p,
-                              favorite: false
-                            } : p));
-                            reloadFavoritePrompts();
-                          }}
+                                onRemoveFavorite={(id) => {
+                                  setFavoritePrompts((prev) => prev.filter((p) => p.promptUuid !== id));
+                                  setFavoriteCount((prev) => (prev > 0 ? prev - 1 : 0));
+                                  setMyPrompts((prev) => prev.map((p) => p.id === id ? {
+                                    ...p,
+                                    favorite: false
+                                  } : p));
+                                  reloadFavoritePrompts();
+                                }}
                                 onCopy={(id) => {
                                   const p = favoritePrompts.find((fp) => fp.promptUuid === id);
                                   if (p) {
                                     navigator.clipboard.writeText(`Title: ${p.title}\nDescription: ${p.description}`);
-                            }
-                          }}
+                                  }
+                                }}
+                                onLikeChange={(liked, likeCount) => handleLikeChange(prompt.promptUuid, liked, likeCount)}
                             />
                         )
                       })

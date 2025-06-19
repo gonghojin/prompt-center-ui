@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {login, register} from "@/app/api/authApi";
 
 interface UseAuthReturn {
@@ -6,11 +6,23 @@ interface UseAuthReturn {
   error: string | null;
   handleLogin: (email: string, password: string) => Promise<any>;
   handleRegister: (name: string, email: string, password: string) => Promise<any>;
+  accessToken: string | null;
 }
 
 export const useAuth = (): UseAuthReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
+      typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null
+  );
+
+  useEffect(() => {
+    const syncToken = () => {
+      setAccessToken(localStorage.getItem("accessToken"));
+    };
+    window.addEventListener("storage", syncToken);
+    return () => window.removeEventListener("storage", syncToken);
+  }, []);
 
   const decodeJWT = (token: string): Record<string, any> => {
     try {
@@ -39,6 +51,7 @@ export const useAuth = (): UseAuthReturn => {
       localStorage.setItem("user", JSON.stringify({ email, name }));
       // 헤더 즉시 갱신
       if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
+      setAccessToken(data.accessToken);
       return data;
     } catch (e: any) {
       setError(e.message || "로그인 실패");
@@ -69,5 +82,6 @@ export const useAuth = (): UseAuthReturn => {
     error,
     handleLogin,
     handleRegister,
+    accessToken,
   };
 }; 

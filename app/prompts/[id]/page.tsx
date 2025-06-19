@@ -13,7 +13,6 @@ import {
   Copy,
   Database,
   Eye,
-  Heart,
   Loader2,
   Palette,
   Share2,
@@ -24,9 +23,8 @@ import {CategoryBadge} from "@/components/category/CategoryBadge"
 import {Category} from "@/app/types/category"
 import ReactMarkdown from "react-markdown"
 import {fetchWithAuth} from "@/app/api/fetchWithAuth"
-import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
 import {FavoriteButton} from "@components/prompts/FavoriteButton"
-import Link from "next/link"
+import {LikeButton} from "@components/prompts/LikeButton"
 import {useToast} from "@/components/ui/useToast"
 
 interface ApiPrompt {
@@ -49,6 +47,7 @@ interface ApiPrompt {
   status: string
   public: boolean
   favorite?: boolean
+  liked?: boolean
 }
 
 const categoryIconMap: Record<string, JSX.Element> = {
@@ -75,6 +74,9 @@ const PromptDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [favorite, setFavorite] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [likeLoading, setLikeLoading] = useState(false)
   const { categories } = useCategories()
   const {showToast} = useToast();
 
@@ -99,7 +101,11 @@ const PromptDetailPage = () => {
   }, [id])
 
   useEffect(() => {
-    setFavorite(!!prompt?.favorite)
+    if (prompt) {
+      setLiked(prompt.liked ?? false)
+      setLikeCount(prompt.favoriteCount ?? 0)
+      setFavorite(prompt.favorite ?? false)
+    }
   }, [prompt])
 
   const handleBack = () => {
@@ -113,6 +119,29 @@ const PromptDetailPage = () => {
     .then(() => showToast({type: "success", message: "URL이 복사되었습니다!"}))
     .catch(() => showToast({type: "error", message: "클립보드 복사 실패"}))
   }
+
+  const handleToggleLike = async () => {
+    if (!prompt || likeLoading) return;
+    setLikeLoading(true);
+    const prevLiked = liked;
+    const prevCount = likeCount;
+    setLiked((prev) => !prev);
+    setLikeCount((count) => prevLiked ? count - 1 : count + 1);
+    try {
+      const method = prevLiked ? 'DELETE' : 'POST';
+      const res = await fetchWithAuth(`/api/v1/prompts/${prompt.id}/like`, {method});
+      if (!res.ok) throw new Error("좋아요 처리 실패");
+      const data = await res.json();
+      setLikeCount(data.likeCount);
+      setLiked(!prevLiked);
+    } catch (e: any) {
+      setLiked(prevLiked);
+      setLikeCount(prevCount);
+      alert(e.message || "좋아요 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLikeLoading(false);
+    }
+  };
 
   const handleCopyContent = async () => {
     if (!prompt) return;
@@ -246,10 +275,15 @@ const PromptDetailPage = () => {
         </div>
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center gap-4 text-xs text-white/60">
-            <span className="flex items-center gap-1">
-              <Heart className="h-3 w-3" />
-              {prompt.favoriteCount}
-            </span>
+            <LikeButton
+                promptId={prompt.id}
+                initialLiked={prompt.liked ?? false}
+                initialLikeCount={prompt.favoriteCount}
+                onChange={(newLiked, newCount) => {
+                  setLiked(newLiked);
+                  setLikeCount(newCount);
+                }}
+            />
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
               {prompt.viewCount}
@@ -268,7 +302,7 @@ const PromptDetailPage = () => {
             </Button>
             <FavoriteButton
                 promptId={prompt.id}
-                initialFavorite={!!prompt.favorite}
+                initialFavorite={prompt.favorite ?? false}
                 onSuccess={(isFavorite) => showToast({
                   type: isFavorite ? "success" : "info",
                   message: isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기에서 제거되었습니다."
