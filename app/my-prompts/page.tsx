@@ -21,6 +21,7 @@ import {deletePrompt} from "@/app/api/promptsApi"
 import {useRouter} from "next/navigation";
 import {useToast} from "@/components/ui/useToast";
 import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
+import {useMyPromptViewCount} from "@/app/hooks/useMyPromptViewCount"
 import {useDebounce} from "@/app/hooks/useDebounce"
 
 type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
@@ -276,22 +277,6 @@ export default function MyPromptsPage() {
     }
   }
 
-  // 통계 카드 4개로 고정 (총 좋아요는 myPrompts.reduce로 계산)
-  const stats = [
-    {label: "내 프롬프트", value: statistics?.totalCount ?? 0, color: "text-blue-400"},
-    {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
-    {
-      label: "총 조회수",
-      value: myPrompts.reduce((sum, p) => sum + p.viewCount, 0),
-      color: "text-green-400"
-    },
-    {
-      label: "총 좋아요",
-      value: myPrompts.reduce((sum, p) => sum + p.favoriteCount, 0),
-      color: "text-red-400"
-    },
-  ];
-
   // statusFilter에서 DELETED 제외
   const filteredStatusFilter = Object.fromEntries(
       Object.entries(statusFilter).filter(([k]) => k !== 'DELETED')
@@ -304,6 +289,30 @@ export default function MyPromptsPage() {
     setCount: setTotalLikeCount,
     reload: reloadLikeCount,
   } = useMyPromptLikeCount()
+
+  const {
+    count: totalViewCount,
+    isLoading: isViewCountLoading,
+    error: viewCountError,
+    setCount: setTotalViewCount,
+    reload: reloadViewCount,
+  } = useMyPromptViewCount()
+
+  // 통계 카드 4개로 고정 (총 좋아요는 API에서 가져온 데이터 사용)
+  const stats = [
+    {label: "내 프롬프트", value: statistics?.totalCount ?? 0, color: "text-blue-400"},
+    {label: "즐겨찾기", value: favoriteCount, color: "text-yellow-400"},
+    {
+      label: "총 조회수",
+      value: totalViewCount,
+      color: "text-green-400"
+    },
+    {
+      label: "총 좋아요",
+      value: totalLikeCount,
+      color: "text-red-400"
+    },
+  ];
 
   const [searchInput, setSearchInput] = useState("")
   const debouncedSearch = useDebounce(searchInput, 300)
@@ -360,6 +369,16 @@ export default function MyPromptsPage() {
           {favoriteCountError && (
               <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
                 {favoriteCountError}
+              </div>
+          )}
+          {viewCountError && (
+              <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
+                {viewCountError}
+              </div>
+          )}
+          {likeCountError && (
+              <div className="mb-4 p-4 bg-red-500/20 text-red-300 rounded text-center">
+                {likeCountError}
               </div>
           )}
 

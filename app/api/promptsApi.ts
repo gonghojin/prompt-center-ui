@@ -68,6 +68,57 @@ export const unlikePrompt = async (promptId: string): Promise<{ likeCount: numbe
   return res.json();
 };
 
+// 조회수 기록 API 
+export const recordPromptView = async (
+    promptId: string,
+    anonymousId?: string
+): Promise<{ viewCount: number }> => {
+  const body: { anonymousId?: string } = {};
+
+  // 비로그인 사용자인 경우 anonymousId 포함
+  if (anonymousId) {
+    body.anonymousId = anonymousId;
+  }
+
+  const res = await fetchWithAuth(`/api/v1/prompts/${promptId}/view`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("프롬프트를 찾을 수 없습니다.");
+    } else if (res.status === 400) {
+      throw new Error("잘못된 요청입니다.");
+    }
+    throw new Error("조회수 기록 실패");
+  }
+
+  // 실제 백엔드 응답: { success: true, totalViewCount: 1, newView: true }
+  const data = await res.json();
+  return {viewCount: data.totalViewCount};
+};
+
+// 조회수 조회 API
+export const getPromptViewCount = async (promptId: string): Promise<{ viewCount: number }> => {
+  const res = await fetchWithAuth(`/api/v1/prompts/${promptId}/view-count/total`);
+  if (!res.ok) throw new Error("조회수 조회 실패");
+
+  // 실제 백엔드 응답: 단순 숫자 (예: 1)
+  const count = await res.json();
+  return {viewCount: count};
+};
+
+// 여러 프롬프트 조회수 일괄 조회 (향후 확장용)
+export const getBatchPromptViewCounts = async (promptIds: string[]): Promise<Record<string, number>> => {
+  const params = new URLSearchParams();
+  promptIds.forEach(id => params.append('ids', id));
+  const res = await fetchWithAuth(`/api/v1/prompts/views/batch?${params.toString()}`);
+  if (!res.ok) throw new Error("조회수 일괄 조회 실패");
+  return res.json();
+};
+
 export const deletePrompt = async (id: string) => {
   const res = await fetchWithAuth(`/api/v1/prompts/${id}`, {
     method: "DELETE",
