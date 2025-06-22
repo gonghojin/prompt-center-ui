@@ -6,6 +6,9 @@ const path = require('path')
 const isDevelopment = process.env.NODE_ENV === 'development';
 const allowedOrigin = isDevelopment ? 'http://localhost:3000' : 'https://192.168.24:3000';
 
+// Docker 환경에서는 backend 서비스로, 로컬에서는 localhost로 접근
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 const nextConfig = {
   webpack: (config: Configuration) => {
     config.resolve = config.resolve || {};
@@ -20,11 +23,11 @@ const nextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://localhost:8080/api/v1/:path*',
+        destination: `${backendUrl}/api/v1/:path*`,
       },
       {
         source: '/api/auth/:path*',
-        destination: 'http://localhost:8080/api/auth/:path*',
+        destination: `${backendUrl}/api/auth/:path*`,
       },
     ]
   },

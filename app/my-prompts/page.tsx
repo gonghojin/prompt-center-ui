@@ -5,7 +5,6 @@ import {Input} from "@components/ui/input"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@components/ui/tabs"
 import {Archive, Clock, Edit, Plus, Search, Share2,} from "lucide-react"
 import {useCallback, useEffect, useState} from "react"
-import {useCategories} from "@/app/hooks/useCategories"
 import type {Category} from "@/app/types/category"
 import {PromptCard} from "@components/my-prompts/PromptCard"
 import {FavoritePromptCard} from "@components/my-prompts/FavoritePromptCard"
@@ -48,6 +47,12 @@ type ActivityLog = {
 };
 
 export default function MyPromptsPage() {
+  // 라우터 훅 사용
+  const router = useRouter();
+
+  // 토스트 훅 사용
+  const {showToast} = useToast();
+
   // useMyPrompts 훅 사용
   const {
     myPrompts,
@@ -122,11 +127,6 @@ export default function MyPromptsPage() {
     TEAM: "border-blue-500/30 text-blue-400",
     PRIVATE: "border-gray-500/30 text-gray-400",
   }
-
-  const {categories} = useCategories()
-
-  const router = useRouter();
-  const {showToast} = useToast();
 
   const handleEditPrompt = (id: string) => {
     router.push(`/prompts/${id}/edit?from=my-prompts`);
