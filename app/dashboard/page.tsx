@@ -6,6 +6,9 @@ import {useRouter} from "next/navigation"
 import {usePromptStatistics} from "@/app/hooks/usePromptStatistics"
 import {useRecentPrompts} from "@/app/hooks/useRecentPrompts"
 import {useCategories} from "@/app/hooks/useCategories"
+import {useWeeklyViewStatistics} from "@/app/hooks/useWeeklyViewStatistics"
+import {useUserStatistics} from "@/app/hooks/useUserStatistics"
+import {useFavoriteStatistics} from "@/app/hooks/useFavoriteStatistics"
 import {categoryIconMap} from "@/lib/categoryIconMap"
 import {getRelativeTime} from "@/app/lib/getRelativeTime"
 import {useRootCategoryStatistics} from "@/app/hooks/useRootCategoryStatistics"
@@ -71,6 +74,17 @@ export default function Dashboard() {
   const router = useRouter()
   const [userName, setUserName] = useState("");
   const { data: promptStats, loading: statsLoading, error: statsError } = usePromptStatistics();
+  const {
+    data: weeklyViewStats,
+    loading: weeklyViewsLoading,
+    error: weeklyViewsError
+  } = useWeeklyViewStatistics();
+  const {data: userStats, loading: userStatsLoading, error: userStatsError} = useUserStatistics();
+  const {
+    data: favoriteStats,
+    loading: favoriteStatsLoading,
+    error: favoriteStatsError
+  } = useFavoriteStatistics();
 
   const [recentPromptsData, setRecentPromptsData] = useState<DashboardPrompt[]>([])
 
@@ -117,18 +131,36 @@ export default function Dashboard() {
         : "-",
       icon: <Code2 className="h-5 w-5" />, href: "/prompts"
     },
-    { label: "팀 멤버", value: "24", change: "+3", icon: <Users className="h-5 w-5" />, href: "/team" },
+    {
+      label: "팀 멤버",
+      value: userStatsLoading ? "..." : userStats?.totalCount?.toLocaleString() ?? "-",
+      change: userStatsLoading
+          ? "..."
+          : userStats
+              ? `${userStats.percentageChange > 0 ? "+" : ""}${userStats.percentageChange}%`
+              : "-",
+      icon: <Users className="h-5 w-5"/>,
+      href: "/team"
+    },
     {
       label: "이번 주 조회수",
-      value: "3,891",
-      change: "+18%",
+      value: weeklyViewsLoading ? "..." : weeklyViewStats?.thisWeekViewCount?.toLocaleString() ?? "-",
+      change: weeklyViewsLoading
+          ? "..."
+          : weeklyViewStats
+              ? `${weeklyViewStats.changeRate > 0 ? "+" : ""}${weeklyViewStats.changeRate.toFixed(1)}%`
+              : "-",
       icon: <TrendingUp className="h-5 w-5" />,
       href: "/analytics",
     },
     {
       label: "즐겨찾기",
-      value: "156",
-      change: "+7",
+      value: favoriteStatsLoading ? "..." : favoriteStats?.totalCount?.toLocaleString() ?? "-",
+      change: favoriteStatsLoading
+          ? "..."
+          : favoriteStats
+              ? `${favoriteStats.percentageChange > 0 ? "+" : ""}${favoriteStats.percentageChange}%`
+              : "-",
       icon: <Star className="h-5 w-5" />,
       href: "/prompts?filter=favorites",
     },

@@ -1,7 +1,7 @@
 "use client"
 
 import type {JSX} from "react"
-import {useEffect, useState} from "react"
+import {useCallback, useEffect, useState} from "react"
 import {useParams, useRouter, useSearchParams} from "next/navigation"
 import {Badge} from "@components/ui/badge"
 import {Button} from "@components/ui/button"
@@ -26,6 +26,8 @@ import {fetchWithAuth} from "@/app/api/fetchWithAuth"
 import {FavoriteButton} from "@components/prompts/FavoriteButton"
 import {LikeButton} from "@components/prompts/LikeButton"
 import {useToast} from "@/components/ui/useToast"
+import {getAnonymousId, isLoggedIn} from '@/app/utils/anonymousId'
+import {getPromptViewCount, recordPromptView} from '@/app/api/promptsApi'
 
 interface ApiPrompt {
   id: string
@@ -77,12 +79,67 @@ const PromptDetailPage = () => {
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [likeLoading, setLikeLoading] = useState(false)
+  const [viewCount, setViewCount] = useState<number>(0)
+  const [isRecordingView, setIsRecordingView] = useState<boolean>(false)
+  const [viewCountInitialized, setViewCountInitialized] = useState<boolean>(false)
   const { categories } = useCategories()
   const {showToast} = useToast();
 
-  // 카테고리 정보 추출
   const category: Category | undefined = categories.find((c) => c.id === prompt?.categoryId)
   const categoryIcon = categoryIconMap[category?.displayName ?? "default"] || categoryIconMap.default
+
+  const recordView = useCallback(async () => {
+    if (!prompt?.id || isRecordingView) return;
+
+    const viewKey = `prompt_view_${prompt.id}`;
+    const hasRecorded = sessionStorage.getItem(viewKey);
+
+    // 이미 기록했다면 조회수만 새로 가져오기 (매번 최신 데이터)
+    if (hasRecorded) {
+      try {
+        const result = await getPromptViewCount(prompt.id);
+        setViewCount(result.viewCount);
+        setPrompt(prev => prev ? {...prev, viewCount: result.viewCount} : null);
+      } catch (error) {
+        console.error('조회수 조회 실패:', error);
+      }
+      return;
+    }
+
+    // 첫 방문이라면 낙관적 업데이트 후 조회수 기록
+    // 현재 상태값을 우선 사용하고, 없으면 prompt 데이터 사용 (안전하게 처리)
+    const currentViewCount = viewCount > 0 ? viewCount : (typeof prompt.viewCount === 'number' ? prompt.viewCount : 0);
+
+    // 낙관적 업데이트: 즉시 UI 업데이트
+    const optimisticViewCount = currentViewCount + 1;
+    setViewCount(optimisticViewCount);
+    setViewCountInitialized(true); // 초기화 완료 표시
+    setPrompt(prev => prev ? {...prev, viewCount: optimisticViewCount} : null);
+
+    setIsRecordingView(true);
+
+    try {
+      const anonymousId = isLoggedIn() ? undefined : getAnonymousId();
+      const result = await recordPromptView(prompt.id, anonymousId);
+
+      // 실제 응답값으로 정확한 값 설정
+      if (result.viewCount !== optimisticViewCount) {
+        setViewCount(result.viewCount);
+        setPrompt(prev => prev ? {...prev, viewCount: result.viewCount} : null);
+      }
+
+      // 기록 완료 표시
+      sessionStorage.setItem(viewKey, 'true');
+
+    } catch (error) {
+      // 실패 시 원래 값으로 롤백
+      setViewCount(currentViewCount);
+      setPrompt(prev => prev ? {...prev, viewCount: currentViewCount} : null);
+      console.error('조회수 기록 실패:', error);
+    } finally {
+      setIsRecordingView(false);
+    }
+  }, [prompt?.id, isRecordingView, viewCount]);
 
   useEffect(() => {
     if (!id) return
@@ -105,8 +162,32 @@ const PromptDetailPage = () => {
       setLiked(prompt.liked ?? false)
       setLikeCount(prompt.favoriteCount ?? 0)
       setFavorite(prompt.favorite ?? false)
+
+      // viewCount 처리 - undefined나 null일 때 0으로 처리
+      const safeViewCount = typeof prompt.viewCount === 'number' ? prompt.viewCount : 0;
+
+      // viewCount는 아직 초기화되지 않았을 때만 설정
+      if (!viewCountInitialized) {
+        setViewCount(safeViewCount)
+        setViewCountInitialized(true)
+      } else {
+        // 이미 초기화된 경우라도 백엔드에서 유효한 값이 왔다면 업데이트
+        if (typeof prompt.viewCount === 'number' && prompt.viewCount !== viewCount) {
+          setViewCount(prompt.viewCount);
+        }
+      }
     }
-  }, [prompt])
+  }, [prompt, viewCountInitialized])
+
+  useEffect(() => {
+    if (prompt?.id && !isRecordingView) {
+      const timer = setTimeout(() => {
+        recordView();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [prompt?.id, recordView, isRecordingView]);
 
   const handleBack = () => {
     router.push("/prompts");
@@ -286,7 +367,8 @@ const PromptDetailPage = () => {
             />
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
-              {prompt.viewCount}
+              {viewCount || prompt?.viewCount || 0}
+              {isRecordingView && <span className="text-xs opacity-50 ml-1">↑</span>}
             </span>
           </div>
           <div className="flex items-center gap-2">
