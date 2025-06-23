@@ -1,4 +1,4 @@
-import { refreshToken as refreshTokenApi } from "@/app/api/authApi";
+import {refreshToken as refreshTokenApi} from "@/app/api/authApi";
 
 export const fetchWithAuth = async (
   input: RequestInfo,
@@ -41,7 +41,6 @@ export const fetchWithAuth = async (
       const data = await refreshTokenApi(refreshToken);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('expiresIn', String(data.expiresIn));
       // 원래 요청을 한 번만 재시도
       return fetchWithAuth(input, init, true);
     } catch (e) {
