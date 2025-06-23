@@ -44,7 +44,6 @@ export const useAuth = (): UseAuthReturn => {
       // 응답 구조: { accessToken, refreshToken, expiresIn }
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("expiresIn", String(data.expiresIn));
       // accessToken에서 name 추출
       const payload = decodeJWT(data.accessToken);
       const name = payload.name || '';

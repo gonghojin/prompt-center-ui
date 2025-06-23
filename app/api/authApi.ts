@@ -1,7 +1,17 @@
 export type LoginPayload = { email: string; password: string };
 export type RegisterPayload = { email: string; password: string; name: string };
 
-export const login = async (payload: LoginPayload): Promise<any> => {
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export const login = async (payload: LoginPayload): Promise<AuthResponse> => {
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -58,7 +68,7 @@ export const logout = async (): Promise<any> => {
   return res.json();
 };
 
-export const refreshToken = async (refreshToken: string): Promise<any> => {
+export const refreshToken = async (refreshToken: string): Promise<RefreshTokenResponse> => {
   const res = await fetch("/api/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
