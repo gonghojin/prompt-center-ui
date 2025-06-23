@@ -17,7 +17,7 @@ export const DashboardQuickActions: FC = () => {
               <Plus className="h-4 w-4 mr-2"/>새 프롬프트 작성
             </Button>
           </Link>
-          <Link href="/prompts?filter=favorites">
+          <Link href="/my-prompts?tab=favorites">
             <Button
                 variant="outline"
                 className="w-full justify-start border-white/30 text-white hover:bg-white/10"

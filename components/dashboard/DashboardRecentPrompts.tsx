@@ -3,7 +3,7 @@ import {Button} from "@components/ui/button"
 import Link from "next/link"
 import {FC, JSX} from "react"
 import {Badge} from "@components/ui/badge"
-import {Clock, Eye, Star} from "lucide-react"
+import {Clock, Eye, Heart} from "lucide-react"
 import {CategoryBadge} from "@components/category/CategoryBadge"
 import type {Category} from "@/app/types/category"
 
@@ -89,7 +89,7 @@ export const DashboardRecentPrompts: FC<DashboardRecentPromptsProps> = ({
                               <div className="flex items-center gap-4 text-xs text-white/60">
                                 <span>by {prompt.createdByName}</span>
                                 <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3"/>
+                            <Heart className="h-3 w-3"/>
                                   {prompt.favoriteCount}
                           </span>
                                 <span className="flex items-center gap-1">

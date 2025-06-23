@@ -140,7 +140,8 @@ export default function Dashboard() {
               ? `${userStats.percentageChange > 0 ? "+" : ""}${userStats.percentageChange}%`
               : "-",
       icon: <Users className="h-5 w-5"/>,
-      href: "/team"
+      href: "/team",
+      isUnderDevelopment: true
     },
     {
       label: "이번 주 조회수",
@@ -152,6 +153,7 @@ export default function Dashboard() {
               : "-",
       icon: <TrendingUp className="h-5 w-5" />,
       href: "/analytics",
+      isUnderDevelopment: true
     },
     {
       label: "즐겨찾기",

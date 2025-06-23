@@ -17,7 +17,7 @@ import {useFavoritePrompts} from "@/app/hooks/useFavoritePrompts"
 import {useFavoriteCount} from "@/app/hooks/useFavoriteCount"
 import {addFavoritePrompt, removeFavoritePrompt} from "@/app/api/favoritePrompt"
 import {deletePrompt} from "@/app/api/promptsApi"
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import {useToast} from "@/components/ui/useToast";
 import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
 import {useMyPromptViewCount} from "@/app/hooks/useMyPromptViewCount"
@@ -49,6 +49,7 @@ type ActivityLog = {
 export default function MyPromptsPage() {
   // 라우터 훅 사용
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 토스트 훅 사용
   const {showToast} = useToast();
@@ -70,7 +71,12 @@ export default function MyPromptsPage() {
     setVisibilityFilter,
   } = useMyPrompts();
 
-  const [activeTab, setActiveTab] = useState("my-prompts")
+  // URL 쿼리 파라미터에서 탭 정보 읽기
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(() => {
+    // URL에 tab 파라미터가 있고 유효한 값이면 사용, 아니면 기본값
+    return (tabFromUrl === 'favorites' || tabFromUrl === 'my-prompts') ? tabFromUrl : "my-prompts";
+  });
 
   // 즐겨찾기 프롬프트 API 연동
   const {
