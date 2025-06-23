@@ -1,31 +1,35 @@
 "use client"
 
-import { Button } from "@components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card"
-import { Badge } from "@components/ui/badge"
-import { Input } from "@components/ui/input"
+import {Button} from "@components/ui/button"
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@components/ui/card"
+import {Badge} from "@components/ui/badge"
+import {Input} from "@components/ui/input"
 import {
-  Search,
+  ArrowRight,
+  BarChart3,
+  CheckCircle,
   Code2,
   Database,
-  Palette,
-  BarChart3,
-  Users,
-  Star,
   GitBranch,
+  Mail,
+  Palette,
+  Search,
   Shield,
-  Zap,
-  ArrowRight,
-  CheckCircle,
   Sparkles,
+  Star,
+  User,
+  Users,
+  X,
+  Zap,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import {useEffect, useState} from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import {useRouter} from "next/navigation"
 
 export default function Component() {
   const [isVisible, setIsVisible] = useState(false)
   const [searchValue, setSearchValue] = useState("")
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +47,42 @@ export default function Component() {
       }
     }
   }
+
+  const handleContactClick = () => {
+    setIsContactModalOpen(true);
+  }
+
+  const handleCloseModal = () => {
+    setIsContactModalOpen(false);
+  }
+
+  // 모달 외부 클릭 시 닫기
+  const handleModalBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleCloseModal();
+    }
+  }
+
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isContactModalOpen) {
+        handleCloseModal();
+      }
+    }
+
+    if (isContactModalOpen) {
+      document.addEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isContactModalOpen]);
 
   const features = [
     {
@@ -125,6 +165,74 @@ export default function Component() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Contact Modal */}
+      {isContactModalOpen && (
+          <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={handleModalBackdropClick}
+          >
+            <div
+                className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/20 p-8 max-w-md w-full shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-white">개발자 정보</h3>
+                <button
+                    onClick={handleCloseModal}
+                    className="text-white/70 hover:text-white transition-colors p-1"
+                    aria-label="모달 닫기"
+                >
+                  <X className="h-6 w-6"/>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div
+                      className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center">
+                    <User className="h-6 w-6 text-white"/>
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-lg">공호진</p>
+                    <p className="text-white/70">연구 2팀</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div
+                      className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+                    <Mail className="h-6 w-6 text-white"/>
+                  </div>
+                  <div>
+                    <p className="text-white/70 text-sm">이메일</p>
+                    <a
+                        href="mailto:hjgong@nkia.co.kr"
+                        className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      hjgong@nkia.co.kr
+                    </a>
+                  </div>
+                </div>
+
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <p className="text-white/80 text-sm text-center">
+                    프롬프트 템플릿 중앙화 서버 개발에 관한 <br/>
+                    문의사항이 있으시면 언제든 연락주세요! 📧
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-center">
+                <Button
+                    onClick={handleCloseModal}
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10 px-6 py-2"
+                >
+                  닫기
+                </Button>
+              </div>
+            </div>
+          </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-cyan-500/10" />
@@ -315,15 +423,14 @@ export default function Component() {
                   무료로 시작하기
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Link href="/contact">
-                  <Button
+                <Button
                     variant="outline"
                     size="lg"
                     className="border-white/30 text-white hover:bg-white/10 px-8 py-3 rounded-full transition-all duration-300"
-                  >
-                    문의하기
-                  </Button>
-                </Link>
+                    onClick={handleContactClick}
+                >
+                  문의하기
+                </Button>
               </div>
             </div>
           </div>
@@ -334,7 +441,7 @@ export default function Component() {
       <footer className="py-12 border-t border-white/20">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <p className="text-white/60">© 2024 프롬프트 템플릿 서버. 모든 권리 보유.</p>
+            <p className="text-white/60">© 2025 프롬프트 템플릿 서버. 개발자 : Gongdel.</p>
           </div>
         </div>
       </footer>
