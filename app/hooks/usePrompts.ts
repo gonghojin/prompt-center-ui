@@ -18,6 +18,13 @@ export const usePrompts = () => {
   const promptsPerPage = 9;
   const { categories, rootCategories } = useCategories();
 
+  // 총 페이지 수 계산
+  const totalPages = Math.ceil(totalPrompts / promptsPerPage);
+
+  // 페이지네이션 상태
+  const canGoBack = currentPage > 0;
+  const canLoadMore = currentPage + 1 < totalPages;
+
   useEffect(() => {
     const fetchPrompts = async () => {
       setLoading(true);
@@ -108,7 +115,35 @@ export const usePrompts = () => {
       alert("URL이 복사되었습니다!");
     });
   };
-  const handleLoadMore = () => setCurrentPage((prev) => prev + 1);
+  const handleLoadMore = () => {
+    if (canLoadMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (canGoBack) {
+      setCurrentPage((prev) => prev - 1);
+      // 페이지 상단으로 스크롤
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  };
+
+  const handleGoToFirst = () => {
+    setCurrentPage(0);
+    // 페이지 상단으로 스크롤
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  };
+
+  // 검색/필터 변경 시 첫 페이지로 리셋
+  const resetToFirstPage = () => {
+    setCurrentPage(0);
+  };
+
+  // 검색어나 카테고리 변경 시 첫 페이지로 리셋
+  useEffect(() => {
+    resetToFirstPage();
+  }, [searchQuery, selectedCategory, sortBy]);
 
   return {
     searchQuery,
@@ -123,10 +158,16 @@ export const usePrompts = () => {
     filteredPrompts: prompts,
     currentPage,
     promptsPerPage,
+    totalPages,
+    canGoBack,
+    canLoadMore,
     handleLike,
     handleFavorite,
     handleShare,
     handleLoadMore,
+    handleGoBack,
+    handleGoToFirst,
+    resetToFirstPage,
     categories,
     rootCategories,
     totalPrompts,
