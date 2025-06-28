@@ -72,76 +72,127 @@
 
 ## 🚀 시작하기
 
-### 필수 요구사항
-- Node.js 18+
+### 🔧 개발 환경
 
-### 개발 환경 설정
-
-1. 저장소 클론
+1. **저장소 클론 및 설치**
 ```bash
 git clone <repository-url>
 cd prompt-center-ui
-```
-
-2. 패키지 설치
-```bash
 npm install
 ```
 
-3. 환경 변수 설정
+2. **환경변수 설정**
 ```bash
-cp .env.example .env
+# 환경변수 설정 도우미 실행
+npm run env:setup
+
+# 또는 수동으로 .env.development 생성
+cp .env.example .env.development
 ```
 
-4. 개발 서버 실행
+3. **개발 서버 실행**
 ```bash
+# HTTP 개발 서버
 npm run dev
+
+# HTTPS 개발 서버 (권장)
+npm run dev:https
 ```
+
+### 🚀 배포
+
+#### 1. 백엔드 통합 배포 (권장)
+
+```bash
+# 백엔드 프로젝트에서 통합 배포
+# deployment/docs/BACKEND_INTEGRATION.md 참조
+```
+
+#### 2. 독립 HTTPS 배포
+
+```bash
+# 원클릭 배포
+npm run deploy:standalone:https
+
+# 단계별 배포
+npm run ssl:generate
+npm run docker:https:build
+npm run docker:https:up
+```
+
+### 📚 상세 가이드
+
+배포 방법별 상세한 가이드는 `deployment/` 디렉토리를 참조하세요:
+
+- **[메인 배포 가이드](deployment/README.md)** - 모든 배포 옵션 비교
+- **[백엔드 통합 배포](deployment/docs/BACKEND_INTEGRATION.md)** - 운영 환경 권장
+- **[독립 HTTPS 배포](deployment/docs/STANDALONE_HTTPS.md)** - 프론트엔드 전용
+- **[개발 환경 설정](deployment/docs/DEVELOPMENT.md)** - 로컬 개발
 
 ## 🏗️ 프로젝트 구조
 ```
 prompt-center-ui/
-├── app/                # Next.js 앱 라우트 및 페이지
-│   ├── api/            # API 유틸리티
-│   │   └── promptsApi.ts   # 프롬프트 API 유틸
-│   ├── auth/           # 인증(회원가입/로그인) 관련
-│   │   ├── login/          # 로그인 페이지
-│   │   └── register/       # 회원가입 페이지
-│   ├── dashboard/      # 대시보드 페이지
-│   ├── my-prompts/     # 내 프롬프트 관리 페이지
-│   ├── prompts/        # 프롬프트 탐색/상세/작성
-│   │   ├── [id]/       # 프롬프트 상세 페이지
-│   │   ├── new/        # 프롬프트 작성 페이지
-│   │   └── page.tsx    # 프롬프트 탐색 메인 페이지
-│   ├── hooks/          # 커스텀 훅
-│   │   ├── useCategories.ts
-│   │   └── usePrompts.ts   # 프롬프트 데이터 훅
-│   ├── types/          # 타입 정의
-│   │   ├── category.ts
-│   │   └── prompt.ts       # 프롬프트 타입 
-│   ├── page.tsx        # 메인 랜딩 페이지
-│   ├── layout.tsx      # 공통 레이아웃
-│   ├── loading.tsx     # 글로벌 로딩
-│   └── globals.css     # 글로벌 스타일
-├── components/         # 공통 UI 및 도메인 컴포넌트
-│   ├── auth/       # 로그인/회원가입 관련 컴포넌트
-│   │   └── AuthForm.tsx    # 로그인/회원가입 폼 컴포넌트
-│   ├── category/       # 카테고리 관련 컴포넌트
-│   ├── prompts/        # 프롬프트 관련 컴포넌트 
-│   │   ├── PromptCard.tsx
-│   │   ├── PromptFilters.tsx
-│   │   └── PromptTags.tsx
-│   ├── layout/         # 레이아웃/글로벌 컴포넌트
-│   │   └── Header.tsx  # 사이트 공통 헤더
-│   └── ui/             # Button, Card, Tabs 등 UI 컴포넌트
-├── lib/                # 유틸리티 함수
-│   ├── utils.ts
-│   ├── categoryIconMap.ts   # 카테고리-아이콘 매핑 
-│   └── getSortType.ts       # 정렬 타입 매핑 함수 
-├── public/             # 정적 파일 (이미지, SVG 등)
-├── package.json        # 프로젝트 메타/의존성
-├── tsconfig.json       # TypeScript 설정
-└── ...                 # 기타 설정/환경 파일
+├── app/                    # Next.js 앱 라우트 및 페이지
+│   ├── api/                # API 유틸리티
+│   ├── auth/               # 인증 관련 페이지
+│   ├── dashboard/          # 대시보드
+│   ├── my-prompts/         # 내 프롬프트 관리
+│   ├── prompts/            # 프롬프트 탐색/상세/작성
+│   ├── hooks/              # 커스텀 훅
+│   ├── types/              # 타입 정의
+│   └── ...
+├── components/             # UI 컴포넌트
+│   ├── auth/               # 인증 컴포넌트
+│   ├── prompts/            # 프롬프트 컴포넌트
+│   ├── layout/             # 레이아웃 컴포넌트
+│   └── ui/                 # 기본 UI 컴포넌트
+├── deployment/             # 🆕 배포 관련 파일들
+│   ├── README.md           # 배포 메인 가이드
+│   ├── docs/               # 상세 배포 가이드들
+│   ├── docker/             # Docker 설정 파일들
+│   ├── nginx/              # Nginx 설정 파일들
+│   └── scripts/            # 배포 스크립트들
+├── lib/                    # 유틸리티 함수
+├── public/                 # 정적 파일
+└── ...
+```
+
+## 📋 주요 스크립트
+
+### 개발
+
+```bash
+npm run dev              # HTTP 개발 서버
+npm run dev:https        # HTTPS 개발 서버 (권장)
+npm run dev:custom-https # HTTPS 개발 서버 (커스텀)
+npm run build           # 프로덕션 빌드
+npm run lint            # 코드 검사
+npm run type-check      # 타입 검사
+```
+
+### 환경 설정
+
+```bash
+npm run env:setup       # 환경변수 설정 도우미
+npm run ssl:generate    # SSL 인증서 생성
+```
+
+### Docker 관리
+
+```bash
+npm run docker:build    # Docker 이미지 빌드
+npm run docker:up       # Docker 컨테이너 시작
+npm run docker:down     # Docker 컨테이너 중지
+npm run docker:logs     # 로그 확인
+npm run docker:ps       # 컨테이너 상태 확인
+npm run docker:restart  # 컨테이너 재시작
+```
+
+### 배포
+
+```bash
+npm run deploy:standalone        # 독립 배포
+npm run deploy:standalone:https  # HTTPS 독립 배포 (SSL 인증서 자동 생성)
 ```
 
 ## 🧪 테스트

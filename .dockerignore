@@ -1,18 +1,59 @@
+# Dependencies
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
 .next
+out
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
 .git
 .gitignore
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Development files
 README.md
+*.md
+!DEPLOYMENT_GUIDE.md
+!HTTPS_DEPLOYMENT_GUIDE.md
 Dockerfile
 .dockerignore
-npm-debug.log
+
+# Logs
+*.log
+logs
+
+# Runtime
 .nyc_output
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-**/*.md
-**/*.log
-# SSL 인증서 파일은 포함 (주석 처리)
-# *.pem 
+coverage
+
+# SSL certificates (development only)
+*.pem
+ssl/
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Docker compose files (not needed in image)
+docker-compose*.yml
+
+# Scripts (not needed in production image)
+scripts/ 

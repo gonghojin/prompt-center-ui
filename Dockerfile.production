@@ -1,0 +1,84 @@
+# Prompth Center Frontend - Production Dockerfile
+# Multi-stage build for optimal image size
+
+# === Build Stage ===
+FROM node:18-alpine AS builder
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 의존성 설치
+RUN apk add --no-cache libc6-compat
+
+# 패키지 파일 복사 및 의존성 설치 (빌드에 필요한 모든 의존성 포함)
+COPY package*.json ./
+RUN npm ci --ignore-scripts && npm cache clean --force
+
+# 소스 코드 복사
+COPY . .
+
+# 빌드 인수 설정
+ARG NODE_ENV=production
+ARG NEXT_PUBLIC_API_URL=/api
+ARG NEXT_PUBLIC_APP_NAME="Prompth Center"
+ARG NEXT_PUBLIC_APP_VERSION="1.0.0"
+ARG NEXT_PUBLIC_SECURE_COOKIE=true
+
+# 환경변수 설정
+ENV NODE_ENV=$NODE_ENV
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
+ENV NEXT_PUBLIC_BACKEND_INTEGRATED=true
+ENV NEXT_PUBLIC_SECURE_COOKIE=$NEXT_PUBLIC_SECURE_COOKIE
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Next.js 애플리케이션 빌드
+RUN npm run build
+
+# === Production Stage ===
+FROM node:18-alpine AS runner
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 보안을 위한 사용자 생성
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# 시스템 의존성 설치
+RUN apk add --no-cache curl
+
+# 필요한 파일들만 복사
+COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/public ./public
+
+# 프로덕션 의존성만 설치
+COPY package*.json ./
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+
+# Next.js 빌드 결과물 복사
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# 로그 디렉토리 생성
+RUN mkdir -p /app/logs && chown nextjs:nodejs /app/logs
+
+# 런타임 환경변수
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# 사용자 변경
+USER nextjs
+
+# 포트 노출
+EXPOSE 3000
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# 애플리케이션 시작
+CMD ["node", "server.js"]

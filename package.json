@@ -3,12 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -H 0.0.0.0",
-    "dev:https": "next dev --turbopack --experimental-https --experimental-https-key ./localhost+2-key.pem --experimental-https-cert ./localhost+2.pem",
+    "dev": "next dev",
+    "dev:https": "node dev-server.js",
     "dev:custom-https": "node dev-server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "env:setup": "./deployment/scripts/setup-env.sh",
+    "ssl:generate": "./deployment/scripts/generate-ssl.sh",
+    "deploy:standalone": "./deployment/scripts/deploy-standalone.sh",
+    "deploy:standalone:https": "npm run ssl:generate && npm run deploy:standalone",
+    "docker:build": "docker-compose -f deployment/docker/https.yml build",
+    "docker:up": "docker-compose -f deployment/docker/https.yml up -d",
+    "docker:down": "docker-compose -f deployment/docker/https.yml down",
+    "docker:logs": "docker-compose -f deployment/docker/https.yml logs -f",
+    "docker:ps": "docker-compose -f deployment/docker/https.yml ps",
+    "docker:restart": "docker-compose -f deployment/docker/https.yml restart"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
@@ -18,21 +29,23 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
+    "postcss": "^8.4.41",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^3.4.16"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "tailwindcss": "^4",
+    "critters": "^0.0.23",
     "tw-animate-css": "^1.3.0",
     "typescript": "^5",
     "webpack": "^5.99.9"

@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import {Loader2, AlertTriangle, CheckCircle, XCircle} from 'lucide-react';
-import { useAuth } from '@/app/hooks/useAuth';
+import {useRouter} from 'next/navigation';
+import {AlertTriangle, CheckCircle, Loader2, XCircle} from 'lucide-react';
+import {useAuth} from '@/app/hooks/useAuth';
 
 type AuthFormType = 'login' | 'register';
 
@@ -80,7 +80,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
       onSubmit={handleSubmit}
       aria-label={type === 'login' ? '로그인 폼' : '회원가입 폼'}
     >
-      <h2 className="text-3xl font-extrabold text-center mb-2 select-none text-gray-900 dark:text-white tracking-tight">
+      <h2 className="text-3xl font-extrabold text-center mb-2 select-none text-white tracking-tight">
         {type === 'login' ? '로그인' : '회원가입'}
       </h2>
       {type === 'register' && (
@@ -90,7 +90,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
           value={form.name}
           onChange={handleChange}
           placeholder="이름"
-          className="w-full rounded-xl px-4 py-3 bg-white/90 dark:bg-black/60 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition"
+          className="w-full rounded-xl px-4 py-3 bg-slate-700/50 border border-slate-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 placeholder-slate-400 text-white shadow-sm transition"
           required
           aria-label="이름"
           autoComplete="name"
@@ -102,7 +102,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         value={form.email}
         onChange={handleChange}
         placeholder="이메일"
-        className="w-full rounded-xl px-4 py-3 bg-white/90 dark:bg-black/60 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition"
+        className="w-full rounded-xl px-4 py-3 bg-slate-700/50 border border-slate-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 placeholder-slate-400 text-white shadow-sm transition"
+        style={{
+          WebkitBoxShadow: '0 0 0 1000px rgba(51, 65, 85, 0.5) inset',
+          WebkitTextFillColor: 'white',
+          backgroundColor: 'rgba(51, 65, 85, 0.5)',
+        }}
         required
         aria-label="이메일"
         autoComplete="email"
@@ -113,7 +118,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         value={form.password}
         onChange={handleChange}
         placeholder="비밀번호"
-        className="w-full rounded-xl px-4 py-3 bg-white/90 dark:bg-black/60 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition"
+        className="w-full rounded-xl px-4 py-3 bg-slate-700/50 border border-slate-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 placeholder-slate-400 text-white shadow-sm transition"
         required
         aria-label="비밀번호"
         autoComplete={type === 'login' ? 'current-password' : 'new-password'}
@@ -125,7 +130,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
               const passed = rule.test(form.password);
               return (
                   <li key={idx}
-                      className={passed ? 'text-green-600 dark:text-green-400 flex items-center gap-1' : 'text-gray-400 flex items-center gap-1'}>
+                      className={passed ? 'text-green-400 flex items-center gap-1' : 'text-slate-400 flex items-center gap-1'}>
                     {passed ? (
                         <CheckCircle className="w-4 h-4 mr-1" aria-hidden="true"/>
                     ) : (
@@ -144,14 +149,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
           value={form.confirmPassword}
           onChange={handleChange}
           placeholder="비밀번호 확인"
-          className="w-full rounded-xl px-4 py-3 bg-white/90 dark:bg-black/60 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition"
+          className="w-full rounded-xl px-4 py-3 bg-slate-700/50 border border-slate-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 placeholder-slate-400 text-white shadow-sm transition"
           required
           aria-label="비밀번호 확인"
           autoComplete="new-password"
         />
       )}
       {(localError || error) && (
-        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg px-3 py-2 text-base text-center justify-center shadow-sm" role="alert">
+          <div
+              className="flex items-center gap-2 bg-red-900/50 text-red-300 rounded-lg px-3 py-2 text-base text-center justify-center shadow-sm border border-red-700/50"
+              role="alert">
           <AlertTriangle className="w-4 h-4" />
           {localError || error}
         </div>
@@ -168,11 +175,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
       <div className="flex justify-between text-base mt-2">
         {type === 'login' ? (
           <>
-            <Link href="/auth/register" className="text-cyan-600 hover:underline focus:underline focus:outline-none" tabIndex={0} aria-label="회원가입 이동">회원가입</Link>
-            <button type="button" className="text-gray-500 hover:underline focus:underline focus:outline-none" tabIndex={0} aria-label="비밀번호 찾기">비밀번호 찾기</button>
+            <Link href="/auth/register"
+                  className="text-cyan-400 hover:text-cyan-300 hover:underline focus:underline focus:outline-none transition-colors"
+                  tabIndex={0} aria-label="회원가입 이동">회원가입</Link>
+            <button type="button"
+                    className="text-slate-400 hover:text-slate-300 hover:underline focus:underline focus:outline-none transition-colors"
+                    tabIndex={0} aria-label="비밀번호 찾기">비밀번호 찾기
+            </button>
           </>
         ) : (
-          <Link href="/auth/login" className="text-cyan-600 hover:underline focus:underline focus:outline-none" tabIndex={0} aria-label="로그인 이동">로그인</Link>
+            <Link href="/auth/login"
+                  className="text-cyan-400 hover:text-cyan-300 hover:underline focus:underline focus:outline-none transition-colors"
+                  tabIndex={0} aria-label="로그인 이동">로그인</Link>
         )}
       </div>
     </form>
