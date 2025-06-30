@@ -272,15 +272,19 @@ export default function Component() {
                 시작하기
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/prompts">
+              <a 
+                href="https://velog.io/@gongel/Prompt-Hub-%ED%94%84%EB%A1%AC%ED%94%84%ED%8A%B8-%ED%85%9C%ED%94%8C%EB%A6%BF-%EC%A4%91%EC%95%99%ED%99%94-%EC%84%9C%EB%B2%84" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 <Button
                   variant="outline"
                   size="lg"
                   className="border-white/30 text-white hover:bg-white/10 px-8 py-3 rounded-full transition-all duration-300"
                 >
-                  데모 보기
+                  개발 스토리 보기
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* Interactive Search Demo */}
