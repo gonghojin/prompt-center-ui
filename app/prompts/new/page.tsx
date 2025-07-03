@@ -643,13 +643,13 @@ export default function NewPromptPage() {
             <span className="text-white/70">/ 새 프롬프트 작성</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+            <Button variant="secondary-action" className="flex items-center gap-2">
               <Eye className="h-4 w-4 mr-2" />
               미리보기
             </Button>
             <Button
               onClick={handleSubmit}
-              className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+              variant="primary"
             >
               <Save className="h-4 w-4 mr-2" />
               저장

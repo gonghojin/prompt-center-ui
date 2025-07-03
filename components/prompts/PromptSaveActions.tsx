@@ -16,15 +16,16 @@ const PromptSaveActions = ({handleSubmit, handleDraftSave}: PromptSaveActionsPro
       <CardContent className="space-y-3">
         <Button
             onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+            variant="primary"
+            className="w-full"
         >
           <Save className="h-4 w-4 mr-2"/>
           저장하고 게시
         </Button>
         <Button
             onClick={handleDraftSave}
-            variant="outline"
-            className="w-full border-white/30 text-white hover:bg-white/10"
+            variant="secondary-action"
+            className="w-full"
         >
           임시 저장
         </Button>

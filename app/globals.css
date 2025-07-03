@@ -79,6 +79,15 @@
   --sidebar-accent-foreground: 240 5.9% 10%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217.2 32.6% 17.5%;
+  
+  /* 프로젝트 테마 색상 변수 추가 */
+  --theme-primary: 270 91% 65%;        /* Purple-Cyan 시작점 */
+  --theme-secondary: 186 100% 69%;     /* Cyan 끝점 */
+  --theme-purple: 270 91% 65%;         /* 보라색 */
+  --theme-cyan: 186 100% 69%;          /* 청록색 */
+  --theme-success: 142 71% 45%;        /* 성공 액션용 */
+  --theme-warning: 43 96% 56%;         /* 경고 액션용 */
+  --theme-danger: 0 72% 51%;           /* 위험 액션용 */
 }
 
 .dark {
@@ -114,6 +123,15 @@
   --sidebar-accent-foreground: 210 40% 98%;
   --sidebar-border: 216 34.4% 13.9%;
   --sidebar-ring: 216 34.4% 13.9%;
+  
+  /* 다크모드 테마 색상 조정 */
+  --theme-primary: 270 91% 65%;
+  --theme-secondary: 186 100% 69%;
+  --theme-purple: 270 91% 65%;
+  --theme-cyan: 186 100% 69%;
+  --theme-success: 142 71% 45%;
+  --theme-warning: 43 96% 56%;
+  --theme-danger: 0 72% 51%;
 }
 
 @layer base {

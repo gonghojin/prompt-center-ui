@@ -123,8 +123,8 @@ const Header = () => {
                   <>
                     <span className="text-white/80 text-sm" aria-label="유저 이메일">{user.email}</span>
                     <Button
-                        variant="outline"
-                        className="border-white/30 text-white hover:bg-white/10 text-sm px-4 py-2"
+                        variant="secondary-action"
+                        className="text-sm px-4 py-2"
                         onClick={handleLogout}
                         aria-label="로그아웃"
                         disabled={logoutLoading}
@@ -136,13 +136,14 @@ const Header = () => {
                   <>
                     <Link href="/auth/login" tabIndex={0} aria-label="로그인 이동">
                       <Button
-                          className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-sm px-4 py-2 hover:from-purple-700 hover:to-cyan-700 transition-all duration-300">
+                          variant="primary"
+                          className="text-sm px-4 py-2">
                         로그인
                       </Button>
                     </Link>
                     <Link href="/auth/register" tabIndex={0} aria-label="회원가입 이동">
-                      <Button variant="outline"
-                              className="border-white/30 text-white hover:bg-white/10 text-sm px-4 py-2 transition-all duration-300">
+                      <Button variant="secondary-action"
+                              className="text-sm px-4 py-2">
                         회원가입
                       </Button>
                     </Link>
@@ -192,8 +193,8 @@ const Header = () => {
                       <div className="border-t border-white/20 pt-4 mt-2">
                         <div className="text-white/60 text-sm mb-2">{user.email}</div>
                         <Button
-                            variant="outline"
-                            className="w-full border-white/30 text-white hover:bg-white/10 text-sm"
+                            variant="secondary-action"
+                            className="w-full text-sm"
                             onClick={handleLogout}
                             disabled={logoutLoading}
                         >
@@ -206,13 +207,14 @@ const Header = () => {
                     <div className="space-y-3">
                       <Link href="/auth/login" onClick={handleMobileLinkClick}>
                         <Button
-                            className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white hover:from-purple-700 hover:to-cyan-700 transition-all duration-300">
+                            variant="primary"
+                            className="w-full">
                           로그인
                         </Button>
                       </Link>
                       <Link href="/auth/register" onClick={handleMobileLinkClick}>
-                        <Button variant="outline"
-                                className="w-full border-white/30 text-white hover:bg-white/10 transition-all duration-300">
+                        <Button variant="secondary-action"
+                                className="w-full">
                           회원가입
                         </Button>
                       </Link>

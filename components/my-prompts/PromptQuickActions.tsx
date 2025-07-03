@@ -23,7 +23,8 @@ export const PromptQuickActions: FC<PromptQuickActionsProps> = ({
         <CardContent className="space-y-3">
           <Link href="/prompts/new?from=my-prompts">
             <Button
-                className="w-full justify-start bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                variant="primary"
+                className="w-full justify-start"
                 onClick={onNewPrompt}
                 aria-label="새 프롬프트 작성"
                 tabIndex={0}
@@ -32,8 +33,8 @@ export const PromptQuickActions: FC<PromptQuickActionsProps> = ({
             </Button>
           </Link>
           <Button
-              variant="outline"
-              className="w-full justify-start border-white/30 text-white hover:bg-white/10"
+              variant="secondary-action"
+              className="w-full justify-start"
               onClick={onExport}
               aria-label="내 프롬프트 내보내기"
               tabIndex={0}
@@ -41,8 +42,8 @@ export const PromptQuickActions: FC<PromptQuickActionsProps> = ({
             <Download className="h-4 w-4 mr-2"/>내 프롬프트 내보내기
           </Button>
           <Button
-              variant="outline"
-              className="w-full justify-start border-white/30 text-white hover:bg-white/10"
+              variant="tertiary"
+              className="w-full justify-start"
               onClick={onArchive}
               aria-label="보관된 프롬프트"
               tabIndex={0}

@@ -223,8 +223,8 @@ export default function Component() {
               <div className="mt-8 flex justify-center">
                 <Button
                     onClick={handleCloseModal}
-                    variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 px-6 py-2"
+                    variant="secondary-action"
+                    className="px-6 py-2"
                 >
                   닫기
                 </Button>
@@ -266,7 +266,8 @@ export default function Component() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                variant="primary"
+                className="px-8 py-3 rounded-full"
                 onClick={handleStart}
               >
                 시작하기
@@ -278,9 +279,9 @@ export default function Component() {
                 rel="noopener noreferrer"
               >
                 <Button
-                  variant="outline"
+                  variant="tertiary"
                   size="lg"
-                  className="border-white/30 text-white hover:bg-white/10 px-8 py-3 rounded-full transition-all duration-300"
+                  className="px-8 py-3 rounded-full"
                 >
                   개발 스토리 보기
                 </Button>
@@ -421,16 +422,17 @@ export default function Component() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  variant="primary"
+                  className="px-8 py-3 rounded-full"
                   onClick={handleStart}
                 >
                   무료로 시작하기
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button
-                    variant="outline"
+                    variant="tertiary"
                     size="lg"
-                    className="border-white/30 text-white hover:bg-white/10 px-8 py-3 rounded-full transition-all duration-300"
+                    className="px-8 py-3 rounded-full"
                     onClick={handleContactClick}
                 >
                   문의하기

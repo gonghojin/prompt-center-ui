@@ -13,14 +13,15 @@ export const DashboardQuickActions: FC = () => {
         <CardContent className="space-y-3">
           <Link href="/prompts/new">
             <Button
-                className="w-full justify-start bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700">
+                variant="primary"
+                className="w-full justify-start">
               <Plus className="h-4 w-4 mr-2"/>새 프롬프트 작성
             </Button>
           </Link>
           <Link href="/my-prompts?tab=favorites">
             <Button
-                variant="outline"
-                className="w-full justify-start border-white/30 text-white hover:bg-white/10"
+                variant="secondary-action"
+                className="w-full justify-start"
             >
               <Star className="h-4 w-4 mr-2"/>
               즐겨찾기 보기
@@ -28,8 +29,8 @@ export const DashboardQuickActions: FC = () => {
           </Link>
           <Link href="/prompts?filter=recent">
             <Button
-                variant="outline"
-                className="w-full justify-start border-white/30 text-white hover:bg-white/10"
+                variant="tertiary"
+                className="w-full justify-start"
             >
               <Clock className="h-4 w-4 mr-2"/>
               최근 수정된 항목

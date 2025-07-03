@@ -16,7 +16,13 @@ import {
   Loader2,
   Palette,
   Share2,
-  User
+  User,
+  Hash,
+  Type,
+  ToggleLeft,
+  List,
+  Braces,
+  Settings
 } from "lucide-react"
 import {useCategories} from "@/app/hooks/useCategories"
 import {CategoryBadge} from "@/components/category/CategoryBadge"
@@ -29,17 +35,25 @@ import {useToast} from "@/components/ui/useToast"
 import {getAnonymousId, isLoggedIn} from '@/app/utils/anonymousId'
 import {getPromptViewCount, recordPromptView} from '@/app/api/promptsApi'
 
+type TemplateVariable = {
+  name: string;
+  type: string;
+  description: string;
+  required: boolean;
+  defaultValue?: string;
+};
+
 interface ApiPrompt {
   id: string
   title: string
   description: string
   content: string
   author: {
-    id: string
+    id: number
     email: string
     name: string
   }
-  tags: { id: number; name: string }[]
+  tags: string[]
   createdAt: string
   updatedAt: string
   viewCount: number
@@ -47,9 +61,10 @@ interface ApiPrompt {
   categoryId: number
   visibility: string
   status: string
-  public: boolean
-  favorite?: boolean
-  liked?: boolean
+  isPublic: boolean
+  isFavorite?: boolean
+  isLiked?: boolean
+  inputVariables?: TemplateVariable[]
 }
 
 const categoryIconMap: Record<string, JSX.Element> = {
@@ -59,6 +74,118 @@ const categoryIconMap: Record<string, JSX.Element> = {
   Database: <Database className="h-5 w-5" />, // 예시
   Design: <Palette className="h-5 w-5" />, // 예시
   default: <Code2 className="h-5 w-5" />,
+}
+
+const variableTypeIcons: Record<string, JSX.Element> = {
+  string: <Type className="h-4 w-4" />,
+  number: <Hash className="h-4 w-4" />,
+  boolean: <ToggleLeft className="h-4 w-4" />,
+  array: <List className="h-4 w-4" />,
+  object: <Braces className="h-4 w-4" />,
+  default: <Settings className="h-4 w-4" />,
+}
+
+const getVariableTypeLabel = (type: string): string => {
+  const typeLabels: Record<string, string> = {
+    string: "문자열",
+    number: "숫자", 
+    boolean: "불리언",
+    array: "배열",
+    object: "객체"
+  }
+  return typeLabels[type] || type
+}
+
+type TemplateVariablesDisplayProps = {
+  variables: TemplateVariable[]
+}
+
+const TemplateVariablesDisplay = ({ variables }: TemplateVariablesDisplayProps) => (
+  <div className="mb-6">
+    <div className="flex items-center mb-4">
+      <h2 className="text-white font-semibold flex items-center gap-2">
+        <Settings className="h-5 w-5 text-purple-400" />
+        템플릿 변수
+      </h2>
+    </div>
+    <div className="bg-black/40 rounded-lg p-4 space-y-3">
+      {variables.map((variable, index) => (
+        <div 
+          key={index} 
+          className="flex items-start justify-between py-3 border-b border-white/10 last:border-b-0"
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="text-purple-400">
+                {variableTypeIcons[variable.type] || variableTypeIcons.default}
+              </span>
+              <code className="text-white font-mono text-sm bg-white/10 px-2 py-1 rounded">
+                {variable.name}
+              </code>
+              <Badge 
+                variant={variable.required ? "destructive" : "secondary"} 
+                className={variable.required 
+                  ? "bg-red-500/20 text-red-300 text-xs" 
+                  : "bg-white/10 text-white/70 text-xs"
+                }
+              >
+                {variable.required ? "필수" : "선택"}
+              </Badge>
+              <Badge variant="outline" className="border-white/30 text-white/70 text-xs">
+                {getVariableTypeLabel(variable.type)}
+              </Badge>
+            </div>
+            <p className="text-white/70 text-sm mb-1">{variable.description}</p>
+            {variable.defaultValue && (
+              <p className="text-white/50 text-xs">
+                기본값: <code className="bg-white/10 px-1 py-0.5 rounded">{variable.defaultValue}</code>
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+// 본문에서 템플릿 변수를 하이라이트하는 함수
+const highlightTemplateVariables = (content: string, variables: TemplateVariable[]) => {
+  if (!variables || variables.length === 0) {
+    return content
+  }
+
+  let highlightedContent = content
+  const variableNames = variables.map(v => v.name)
+
+  // {{변수명}} 패턴을 찾아서 하이라이트 적용
+  variableNames.forEach(variableName => {
+    const pattern = new RegExp(`\\{\\{\\s*${variableName}\\s*\\}\\}`, 'g')
+    highlightedContent = highlightedContent.replace(
+      pattern,
+      `<span class="template-variable">{{${variableName}}}</span>`
+    )
+  })
+
+  return highlightedContent
+}
+
+// 하이라이트된 본문을 렌더링하는 컴포넌트
+type HighlightedContentProps = {
+  content: string
+  variables?: TemplateVariable[]
+}
+
+const HighlightedContent = ({ content, variables }: HighlightedContentProps) => {
+  const highlightedContent = highlightTemplateVariables(content, variables || [])
+
+  return (
+    <div className="relative">
+      <pre 
+        className="bg-black/40 text-white p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm [&_.template-variable]:text-cyan-300 [&_.template-variable]:underline [&_.template-variable]:decoration-dotted [&_.template-variable]:decoration-cyan-400/60 [&_.template-variable]:decoration-2 [&_.template-variable]:underline-offset-2 [&_.template-variable]:font-medium [&_.template-variable]:font-mono [&_.template-variable]:inline-block"
+        dangerouslySetInnerHTML={{ __html: highlightedContent }}
+      />
+    </div>
+  )
 }
 
 const formatDate = (dateStr?: string) => {
@@ -159,9 +286,9 @@ const PromptDetailPage = () => {
 
   useEffect(() => {
     if (prompt) {
-      setLiked(prompt.liked ?? false)
+      setLiked(prompt.isLiked ?? false)
       setLikeCount(prompt.favoriteCount ?? 0)
-      setFavorite(prompt.favorite ?? false)
+      setFavorite(prompt.isFavorite ?? false)
 
       // viewCount 처리 - undefined나 null일 때 0으로 처리
       const safeViewCount = typeof prompt.viewCount === 'number' ? prompt.viewCount : 0;
@@ -288,7 +415,7 @@ const PromptDetailPage = () => {
           ) : (
             <Badge variant="outline" className="border-white/30 text-white/70 text-xs">카테고리 없음</Badge>
           )}
-          {!prompt.public && <Eye className="h-4 w-4 text-white/50 ml-2" aria-label="비공개" />}
+          {!prompt.isPublic && <Eye className="h-4 w-4 text-white/50 ml-2" aria-label="비공개" />}
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">{prompt.title}</h1>
         <div className="prose prose-invert max-w-none text-white/70 mb-4">
@@ -313,10 +440,7 @@ const PromptDetailPage = () => {
           </ReactMarkdown>
         </div>
         <div className="flex flex-wrap gap-1 mb-4">
-          {(Array.isArray(prompt.tags) && typeof prompt.tags[0] === "string"
-            ? prompt.tags
-            : prompt.tags?.map((t: any) => t.name) || []
-          ).map((tag: string, idx: number) => (
+          {prompt.tags?.map((tag: string, idx: number) => (
             <Badge key={idx} variant="secondary" className="text-xs bg-white/10 text-white/70">
               {tag}
             </Badge>
@@ -332,6 +456,7 @@ const PromptDetailPage = () => {
             {formatDate(prompt.updatedAt)}
           </div>
         </div>
+        
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-white font-semibold">본문</h2>
@@ -350,15 +475,21 @@ const PromptDetailPage = () => {
               <span className="text-xs">복사</span>
             </Button>
           </div>
-          <pre className="bg-black/40 text-white p-4 rounded-lg overflow-x-auto whitespace-pre-wrap text-sm">
-            {prompt.content}
-          </pre>
+          <HighlightedContent content={prompt.content} variables={prompt.inputVariables} />
         </div>
+        
+        {/* 템플릿 변수 섹션 - 본문 뒤로 이동 */}
+        {prompt.inputVariables && prompt.inputVariables.length > 0 && (
+          <TemplateVariablesDisplay 
+            variables={prompt.inputVariables}
+          />
+        )}
+
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center gap-4 text-xs text-white/60">
             <LikeButton
                 promptId={prompt.id}
-                initialLiked={prompt.liked ?? false}
+                initialLiked={prompt.isLiked ?? false}
                 initialLikeCount={prompt.favoriteCount}
                 onChange={(newLiked, newCount) => {
                   setLiked(newLiked);
@@ -384,7 +515,7 @@ const PromptDetailPage = () => {
             </Button>
             <FavoriteButton
                 promptId={prompt.id}
-                initialFavorite={prompt.favorite ?? false}
+                initialFavorite={prompt.isFavorite ?? false}
                 onSuccess={(isFavorite) => showToast({
                   type: isFavorite ? "success" : "info",
                   message: isFavorite ? "즐겨찾기에 추가되었습니다." : "즐겨찾기에서 제거되었습니다."

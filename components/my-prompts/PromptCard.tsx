@@ -143,7 +143,7 @@ export const PromptCard: FC<PromptCardProps> = ({
               {onView ? (
                   <Button
                       size="sm"
-                      className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                      variant="primary"
                       aria-label="보기"
                       tabIndex={0}
                       onClick={() => onView(prompt.id)}
@@ -154,7 +154,7 @@ export const PromptCard: FC<PromptCardProps> = ({
                   <Link href={`/prompts/${prompt.id}`}>
                     <Button
                         size="sm"
-                        className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                        variant="primary"
                         aria-label="보기"
                         tabIndex={0}
                     >

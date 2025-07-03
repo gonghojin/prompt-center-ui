@@ -85,7 +85,7 @@ export const FavoritePromptCard: FC<FavoritePromptCardProps> = ({
               <Link href={`/prompts/${prompt.promptUuid}`}>
                 <Button
                     size="sm"
-                    className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+                    variant="primary"
                     aria-label="보기"
                     tabIndex={0}
                 >

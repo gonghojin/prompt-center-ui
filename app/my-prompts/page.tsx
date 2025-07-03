@@ -22,6 +22,7 @@ import {useToast} from "@/components/ui/useToast";
 import {useMyPromptLikeCount} from "@/app/hooks/useMyPromptLikeCount"
 import {useMyPromptViewCount} from "@/app/hooks/useMyPromptViewCount"
 import {useDebounce} from "@/app/hooks/useDebounce"
+import {Button} from "@/components/ui/button"
 
 type StatusType = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'DELETED';
 type VisibilityType = 'PUBLIC' | 'TEAM' | 'PRIVATE';
@@ -604,22 +605,14 @@ export default function MyPromptsPage() {
                         className="mb-2 p-2 bg-red-100 text-red-600 rounded text-sm">{deleteError}</div>
                 )}
                 <div className="flex justify-end gap-2">
-                  <button
-                      className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none"
-                      onClick={handleCancelDelete}
-                      disabled={isDeleteLoading}
-                      aria-label="삭제 취소"
-                  >
+                  <Button variant="secondary-action" onClick={handleCancelDelete}
+                          aria-label="삭제 취소">
                     취소
-                  </button>
-                  <button
-                      className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 focus:outline-none disabled:opacity-60"
-                      onClick={handleConfirmDelete}
-                      disabled={isDeleteLoading}
-                      aria-label="프롬프트 삭제"
-                  >
+                  </Button>
+                  <Button variant="danger" onClick={handleConfirmDelete} disabled={isDeleteLoading}
+                          aria-label="프롬프트 삭제">
                     {isDeleteLoading ? "삭제 중..." : "삭제"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

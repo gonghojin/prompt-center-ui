@@ -107,7 +107,7 @@ export const PromptCard: FC<PromptCardProps> = ({
           <Link href={`/prompts/${prompt.id}`} tabIndex={0} aria-label="프롬프트 상세 보기">
             <Button
               size="sm"
-              className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+              variant="primary"
             >
               보기
             </Button>

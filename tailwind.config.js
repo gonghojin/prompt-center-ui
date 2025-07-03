@@ -58,6 +58,15 @@ module.exports = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        theme: {
+          primary: 'hsl(var(--theme-primary))',
+          secondary: 'hsl(var(--theme-secondary))',
+          purple: 'hsl(var(--theme-purple))',
+          cyan: 'hsl(var(--theme-cyan))',
+          success: 'hsl(var(--theme-success))',
+          warning: 'hsl(var(--theme-warning))',
+          danger: 'hsl(var(--theme-danger))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

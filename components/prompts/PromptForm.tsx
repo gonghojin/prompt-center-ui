@@ -348,7 +348,8 @@ export function PromptForm({
             <div className="flex gap-4 mt-6">
               <Button
                   onClick={handleSubmit}
-                  className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 flex-1"
+                  variant="primary"
+                  className="flex-1"
                   disabled={isSaving}
               >
                 <Save
@@ -356,8 +357,8 @@ export function PromptForm({
               </Button>
               <Button
                   onClick={handleDraftSave}
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 flex-1"
+                  variant="secondary-action"
+                  className="flex-1"
                   disabled={isSaving}
               >
                 {isSaving ? "저장 중..." : "임시 저장"}
